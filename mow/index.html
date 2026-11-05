@@ -1,0 +1,3003 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#120807">
+<title>疯狂火世界 · 割草版</title>
+<!-- 字体非阻塞加载：国内网络加载不到时直接用系统字体，不会卡住页面 -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=ZCOOL+QingKe+HuangYou&family=Chakra+Petch:wght@500;700&display=swap" media="print" onload="this.media='all'">
+<style>
+  :root{
+    --bg:#120807;--bg2:#1C0E0B;--line:#3D241C;--line2:#5A3A30;--ink:#FFF1E6;--dim:#C2A193;--warm:#FFD7C2;
+    --ice:#8BEBFF;--ice2:#EAFBFF;--iceDeep:#1E6F8A;--panel:#0E1A20;--panelLine:#2E5F72;--iceInk:#06151B;
+    --fire:#FF5A1F;--amber:#FFB020;--gold:#FFD24A;--red:#F0304A;--mag:#FF4FD8;
+    --f-title:"ZCOOL QingKe HuangYou","PingFang SC","Microsoft YaHei",sans-serif;
+    --f-num:"Chakra Petch",ui-monospace,"SF Mono",system-ui,sans-serif;
+    --sat:env(safe-area-inset-top,0px);--sab:env(safe-area-inset-bottom,0px);
+    --sal:env(safe-area-inset-left,0px);--sar:env(safe-area-inset-right,0px);
+    color-scheme:dark
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;background:var(--bg);color:var(--ink);overflow:hidden;overscroll-behavior:none;
+    font-family:system-ui,"PingFang SC","Microsoft YaHei",sans-serif;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none}
+  canvas{display:block;touch-action:none}
+  #probe{position:fixed;visibility:hidden;pointer-events:none;padding:var(--sat) var(--sar) var(--sab) var(--sal)}
+  button{font:inherit;color:inherit;cursor:pointer}
+  button:focus-visible{outline:2px solid var(--ice);outline-offset:3px}
+  b{font-weight:700}
+
+  .screen{position:fixed;inset:0;display:none;flex-direction:column;overflow-y:auto;
+    padding:calc(var(--sat) + 20px) max(16px,var(--sar)) calc(var(--sab) + 20px) max(16px,var(--sal));background:rgba(18,8,7,.92)}
+  .screen.on{display:flex}
+  .wrap{width:100%;max-width:520px;margin:auto;display:flex;flex-direction:column;gap:14px}
+  .wrap.center{align-items:stretch;text-align:center;max-width:360px}
+  .ht{font-family:var(--f-title);font-weight:400;font-size:34px;line-height:1.1;color:var(--ice)}
+  .kick{font-size:12px;letter-spacing:.2em;color:var(--dim)}
+  .head{display:flex;justify-content:space-between;align-items:flex-end;gap:12px}
+  .head>div:first-child{display:flex;flex-direction:column;gap:2px;min-width:0}
+  .coin{display:inline-flex;align-items:center;gap:6px;font-family:var(--f-num);font-weight:700;color:var(--gold);font-size:28px;font-variant-numeric:tabular-nums}
+  .coin::before{content:"";width:18px;height:18px;border-radius:50%;background:var(--gold);box-shadow:inset -3px -3px 0 #C99A1A;flex:none}
+  .coinpill{padding:6px 12px;background:#1A1608;border:1px solid #5A4A12}
+  .coinpill .coin{font-size:24px}
+  .num{font-family:var(--f-num);font-weight:700;font-variant-numeric:tabular-nums}
+
+  .btn{height:56px;padding:0 20px;border:0;background:var(--ice);color:var(--iceInk);font-size:18px;font-weight:900;letter-spacing:.08em;
+    clip-path:polygon(12px 0,100% 0,100% calc(100% - 12px),calc(100% - 12px) 100%,0 100%,0 12px);
+    display:inline-flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.15}
+  .btn:active{transform:scale(.97)}
+  .btn.fire{background:var(--fire);color:#120807}
+  .btn.big{height:64px;font-size:26px;letter-spacing:.4em;padding-left:calc(20px + .4em)}
+  .btn.ghost{background:transparent;color:var(--ink);border:1.5px solid var(--line2);clip-path:none;font-weight:400;font-size:15px;letter-spacing:0}
+  .btn small{font-family:var(--f-num);font-size:12px;font-weight:700;letter-spacing:0;color:var(--fire)}
+  .btn[disabled]{opacity:.4;cursor:default;transform:none}
+  .actions{display:flex;gap:10px}
+  .actions .btn:not(.ghost){flex:1}
+  .actions .btn.ghost{flex:none}
+  .keys{color:var(--dim);font-size:12px;text-align:center;line-height:2}
+  .keys kbd{font-family:var(--f-num);font-size:12px;color:var(--ink);padding:2px 7px;border:1px solid var(--line2);border-bottom-width:3px;margin:0 2px}
+  .hint{font-size:12px;color:var(--warm);text-align:center}
+  .fine{display:none!important}
+
+  /* 标题页 */
+  #s-title{background:rgba(18,8,7,.8);padding-bottom:0;overflow-x:hidden}
+  .t-top{display:flex;justify-content:space-between;align-items:center;gap:8px;position:relative;z-index:1}
+  .ver{font-family:var(--f-num);font-size:12px;letter-spacing:.2em;color:var(--dim)}
+  .sets{display:flex;gap:8px}
+  .ico{width:44px;height:44px;border:1px solid var(--line);background:var(--bg2);display:flex;align-items:center;justify-content:center}
+  .ico span{display:none}
+  .ico svg,.set svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  .ico.on{color:var(--ice)}.ico.off{color:var(--dim)}
+  .t-main{flex:1;display:flex;flex-direction:column;justify-content:center;gap:22px;width:100%;max-width:1080px;margin:0 auto;position:relative;z-index:1;padding:12px 0}
+  .t-left{display:flex;flex-direction:column;gap:18px;min-width:0}
+  .kicker{display:flex;align-items:center;gap:10px;font-size:12px;letter-spacing:.2em;color:var(--dim)}
+  .kicker i{width:22px;height:2px;background:var(--fire)}
+  h1{font-family:var(--f-title);font-weight:400;font-size:clamp(56px,min(23vw,17vh),150px);line-height:.92;color:var(--fire);text-shadow:.04em .04em 0 var(--iceDeep);letter-spacing:.02em}
+  .modetag{align-self:flex-start;margin-top:-4px;padding:3px 10px;background:var(--ice);color:#06151B;font-weight:900;font-size:clamp(14px,3.6vw,18px);letter-spacing:.2em;transform:rotate(2deg)}
+  .tape{align-self:flex-start;transform:rotate(-2deg);padding:5px;background:repeating-linear-gradient(-45deg,var(--amber) 0 10px,var(--bg) 10px 20px)}
+  .tape div{background:var(--bg);padding:8px 14px;font-size:clamp(17px,4.6vw,26px);font-weight:900}
+  .tape em{font-style:normal;color:var(--amber)}
+  .t-recs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;max-width:460px}
+  .t-recs div{display:flex;flex-direction:column;gap:2px}
+  .t-recs b{font-family:var(--f-num);font-size:22px}
+  .t-recs span,.t-first{font-size:12px;color:var(--dim)}
+  .t-hero{align-self:center;width:min(220px,52vw);aspect-ratio:1;max-width:100%;position:relative}
+  .t-hero svg{width:100%;height:100%;overflow:visible}
+  .chrow{display:flex;align-items:center;gap:8px}
+  .chrow .ico{font-size:24px;color:var(--ice);flex:none}
+  .chrow .ico[disabled]{opacity:.3}
+  .chname{flex:1;min-width:0;text-align:center;font-weight:900;font-size:17px;color:var(--ink)}
+  .chname small{display:block;font-size:12px;font-weight:400;color:var(--dim)}
+  .t-bottom{display:flex;flex-direction:column;gap:10px;width:100%;max-width:460px;margin:0 auto;position:relative;z-index:1;padding-bottom:calc(var(--sab) + 28px)}
+  .flames{position:fixed;left:0;right:0;bottom:0;width:100%;height:120px;pointer-events:none}
+  @media (min-width:820px) and (min-aspect-ratio:1/1){
+    .t-main{flex-direction:row;align-items:center;justify-content:space-between}
+    .t-hero{width:min(380px,34vw,52vh)}
+    .t-bottom{margin:0;margin-left:max(0px,calc((100% - 1080px)/2))}
+  }
+  @media (max-height:520px) and (min-aspect-ratio:1/1){
+    .t-main{flex-direction:row;align-items:center;gap:16px;padding:4px 0}
+    h1{font-size:64px}
+    .t-left{gap:10px}
+    .t-hero{width:150px}
+    .t-bottom{flex-direction:row;align-items:center;max-width:none;margin:0;padding-bottom:calc(var(--sab) + 12px)}
+    .t-bottom .btn.big{width:260px;height:56px;font-size:22px}
+    .flames{height:70px}
+  }
+
+  /* 暂停 */
+  .setrow{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+  .set{height:64px;flex-direction:column;gap:4px;font-size:12px;padding:0 4px}
+  .set.on{color:var(--ice);border-color:var(--panelLine)}
+  .set.off{color:var(--dim)}
+
+  /* 选技能卡 */
+  .earn{display:grid;grid-template-columns:repeat(auto-fit,minmax(68px,1fr));gap:6px;text-align:center}
+  .earn div{background:var(--bg2);padding:6px 2px;display:flex;flex-direction:column}
+  .earn b{font-family:var(--f-num);font-size:16px;color:var(--gold)}
+  .earn span{font-size:11px;color:var(--dim)}
+  .bonus{font-size:13px;color:var(--ice);background:var(--panel);border:1px solid var(--panelLine);padding:8px 10px}
+  .bonus:empty{display:none}
+  .odds{display:flex;flex-direction:column;gap:6px}
+  .odds .row{display:flex;justify-content:space-between;font-size:12px;color:var(--dim)}
+  .odds .row b{font-family:var(--f-num);color:var(--ink)}
+  .obar{display:flex;height:10px;gap:2px}
+  .olg{display:flex;gap:14px;flex-wrap:wrap;font-size:11px}
+  .cards{display:flex;flex-direction:column;gap:10px}
+  .card{text-align:left;padding:14px;background:var(--qb);border:2px solid var(--qc);display:flex;gap:14px;align-items:center;transition:transform .1s}
+  .cards.dense{gap:8px}
+  .cards.dense .card{padding:8px 10px;gap:10px}
+  .cards.dense .cic{width:40px;height:40px}
+  .cards.dense .ctext{font-size:13px;line-height:1.35}
+  #s-up .actions,#s-shop .actions{position:sticky;bottom:0;z-index:2;background:var(--bg);padding-block:8px}
+  .card.sel{box-shadow:0 0 0 3px var(--ice);transform:scale(1.015)}
+  .cic{flex:none;width:56px;height:56px;background:var(--panel);display:flex;align-items:center;justify-content:center;color:var(--sc)}
+  .cic svg{width:30px;height:30px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+  .cbody{display:flex;flex-direction:column;gap:4px;min-width:0;flex:1}
+  .crow{display:flex;align-items:center;gap:8px}
+  .cname{font-size:18px}
+  .chip{font-size:11px;color:#120807;background:var(--sc);padding:0 6px}
+  .cq{margin-left:auto;font-size:11px;font-weight:700;color:var(--ql)}
+  .ctext{font-size:14px;line-height:1.5}
+  .ctext b{font-family:var(--f-num);color:var(--ql2)}
+  .ccost{font-size:12px;color:#FF8A8A}
+  .clv{font-size:11px;color:var(--dim)}
+  .none{color:var(--dim);font-size:14px;text-align:center;padding:24px;border:1px dashed var(--line2)}
+  @media (prefers-reduced-motion:reduce){.card{transition:none}.card.sel{transform:none}}
+
+  /* 冰窖商店 */
+  #s-shop{background:rgba(11,20,24,.96);color:var(--ice2)}
+  #s-shop .kick{color:#8FB5C2}
+  .bag{display:flex;align-items:center;gap:10px}
+  .bag>span:first-child{font-size:12px;color:#8FB5C2}
+  .slots{display:flex;gap:6px}
+  .slot{width:44px;height:44px;border:1.5px dashed var(--panelLine);display:flex;align-items:center;justify-content:center;position:relative;font-family:var(--f-num);font-size:12px;color:#5F8A99}
+  .slot.full{border:1.5px solid var(--ice);background:var(--panel);color:var(--ice)}
+  .slot svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+  .slot i{position:absolute;right:-6px;top:-6px;min-width:17px;height:17px;border-radius:9px;background:var(--ice);color:var(--iceInk);font-style:normal;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 3px}
+  .slot u{position:absolute;left:2px;top:0;font-size:10px;text-decoration:none;color:#8FB5C2}
+  .pips{margin-left:auto;display:flex;gap:3px;align-items:center}
+  .pip{width:14px;height:14px;background:var(--ice);transform:rotate(45deg) scale(.8)}
+  .pip.e{background:none;border:2px solid var(--panelLine)}
+  .shelves{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .shelves .shelf:last-child:nth-child(odd){grid-column:1/-1}
+  .shelf{padding:12px;background:#102029;border:1px solid var(--panelLine);display:flex;flex-direction:column;gap:8px;position:relative;color:var(--sc)}
+  .shelf.feat{flex-direction:row;align-items:center;gap:14px;border:2px solid var(--ice);background:#0F2630;margin-top:6px}
+  .shelf.feat .sic{flex:none;width:56px;height:56px;background:#0B1418;display:flex;align-items:center;justify-content:center}
+  .shelf.feat .smid{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+  .shelf.feat .buy{flex:none;width:76px}
+  .ribbon{position:absolute;right:-2px;top:-12px;background:var(--amber);color:#120807;font-size:11px;font-weight:700;padding:2px 8px}
+  .srow{display:flex;justify-content:space-between;align-items:flex-start;gap:6px}
+  .shelf svg{width:30px;height:30px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+  .stag{font-size:11px;color:#8FB5C2;text-align:right}
+  .sname{font-size:15px;color:var(--ice2)}
+  .sdesc{font-size:12px;line-height:1.5;color:#B5D6E0;flex:1}
+  .scost{font-size:12px;color:#FF8A8A}
+  .buy{height:46px;border:0;background:var(--gold);color:#120807;font-family:var(--f-num);font-weight:700;font-size:17px;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1}
+  .buy s{font-size:11px;color:#6A5410}
+  .buy[disabled]{background:transparent;border:1.5px solid var(--line2);color:#FF8A8A;font-size:14px;cursor:default}
+  .buy.sold{color:#8FB5C2;border-color:var(--panelLine)}
+  .kbd{position:absolute;left:6px;bottom:4px;font-family:var(--f-num);font-size:10px;color:#5F8A99}
+  .shelf.feat .kbd{left:auto;right:84px}
+
+  /* 结算 */
+  .melt{display:flex;flex-direction:column;align-items:center;gap:6px}
+  .melt svg{width:120px;height:60px}
+  .melt .ht{color:var(--fire);font-size:48px;text-shadow:3px 3px 0 var(--iceDeep)}
+  .stamp{align-self:center;transform:rotate(-3deg);border:3px solid var(--red);padding:6px 18px;color:var(--red);font-size:22px;font-weight:900;letter-spacing:.06em;text-align:center}
+  .miss{text-align:center;display:flex;flex-direction:column;gap:2px}
+  .miss:empty{display:none}
+  .miss span{font-size:14px;color:var(--dim)}
+  .miss b{font-family:var(--f-num);font-size:64px;line-height:1;color:var(--amber)}
+  .miss b small{font-size:24px}
+  .grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .grid2 div{background:var(--bg2);padding:10px 12px;display:flex;flex-direction:column;gap:2px}
+  .grid2 span{font-size:11px;color:var(--dim)}
+  .grid2 b{font-family:var(--f-num);font-size:22px}
+  .rec{font-size:13px;color:var(--gold);text-align:center}
+  .build{display:flex;flex-wrap:wrap;gap:6px}
+  .build span{font-size:12px;padding:3px 8px;border:1px solid var(--qc);color:var(--ql)}
+  #d-share{width:100%;font:inherit;font-size:13px;line-height:1.6;color:var(--warm);background:var(--bg2);border:1px dashed var(--line2);padding:10px 12px;resize:none}
+  #s-shop .actions .btn{min-width:0;padding:0 6px;font-size:16px}
+  #s-shop #b-refresh{flex:none;width:72px}
+  #s-shop #b-auto,#s-shop #b-go{flex:1}
+  .t-acts{display:flex;gap:10px}
+  .t-acts .btn.big{flex:1;min-width:0;font-size:20px;letter-spacing:.04em;white-space:nowrap;padding:0 8px}
+  .t-acts .btn.ghost{flex:none;width:112px;padding:0 6px;font-size:14px;line-height:1.3}
+  @media (orientation:portrait){.t-hero{width:min(150px,40vw)}}
+  @media (orientation:portrait) and (max-height:720px){.t-hero{display:none}}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="probe"></div>
+
+<div id="s-title" class="screen on">
+  <svg class="flames" viewBox="0 0 390 150" preserveAspectRatio="none" aria-hidden="true">
+    <path d="M0 150 L0 80 L30 50 L60 90 L95 30 L130 85 L165 55 L200 95 L240 40 L275 90 L310 60 L350 100 L390 45 L390 150 Z" fill="#2A0E08"/>
+    <path d="M0 150 L0 115 L50 90 L100 125 L150 95 L210 130 L270 100 L330 128 L390 105 L390 150 Z" fill="#4A1509"/>
+    <path d="M0 150 L0 138 L90 128 L190 142 L290 130 L390 140 L390 150 Z" fill="#7A2410"/>
+  </svg>
+  <div class="t-top">
+    <span class="ver">割草版 V1</span>
+    <div class="sets"><button class="ico coarse" data-set="drag"></button><button class="ico" data-set="mute"></button><button class="ico" data-set="music"></button><button class="ico" data-set="lowfx"></button></div>
+  </div>
+  <div class="t-main">
+    <div class="t-left">
+      <div class="kicker"><i></i>自动开火 · 停下更猛 · 越杀越爽</div>
+      <h1>疯狂<br>火世界</h1><div class="modetag">割草版</div>
+      <div class="tape"><div>第一关清屏，<em>第二关</em>被火海淹没。</div></div>
+      <div id="t-rec"></div>
+    </div>
+    <div class="t-hero" aria-hidden="true">
+      <svg viewBox="-20 -10 240 230">
+        <circle cx="100" cy="100" r="98" fill="none" stroke="#FF5A1F" stroke-width="2" stroke-dasharray="7 7" opacity=".5"/>
+        <g transform="translate(25 22) scale(1.5)">
+          <ellipse cx="50" cy="91" rx="30" ry="5" fill="#000" opacity=".45"/>
+          <path d="M22 34 L50 48 L50 86 L22 70 Z" fill="#9BE9FB" stroke="#9BE9FB" stroke-width="5" stroke-linejoin="round"/>
+          <path d="M50 48 L78 34 L78 70 L50 86 Z" fill="#3FB6DA" stroke="#3FB6DA" stroke-width="5" stroke-linejoin="round"/>
+          <path d="M22 34 L50 20 L78 34 L50 48 Z" fill="#EAFBFF" stroke="#EAFBFF" stroke-width="5" stroke-linejoin="round"/>
+          <path d="M30 32 L44 25" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
+          <circle cx="32" cy="58" r="3.4" fill="#0B2530"/><circle cx="43" cy="63" r="3.4" fill="#0B2530"/>
+          <path d="M34 68 Q37.5 71 41 69.5" stroke="#0B2530" stroke-width="2" fill="none" stroke-linecap="round"/>
+          <ellipse cx="28" cy="64" rx="3" ry="1.8" fill="#FF9BB0" opacity=".7"/>
+          <path d="M68 74 Q72 84 68 88 Q64 84 68 74 Z" fill="#8BEBFF"/>
+        </g>
+        <g transform="translate(-28 48) scale(.48)"><path d="M50 8 C68 32 82 48 78 68 A28 28 0 0 1 22 68 C18 48 34 36 50 8 Z" fill="#FF5A1F"/><path d="M50 40 C60 54 66 60 63 72 A13 13 0 0 1 37 72 C35 62 42 54 50 40 Z" fill="#FFB020"/><path d="M38 62 L46 65 M62 62 L54 65" stroke="#120807" stroke-width="4" stroke-linecap="round"/></g>
+        <g transform="translate(176 128) scale(.58)"><path d="M50 8 C68 32 82 48 78 68 A28 28 0 0 1 22 68 C18 48 34 36 50 8 Z" fill="#F0304A"/><path d="M50 40 C60 54 66 60 63 72 A13 13 0 0 1 37 72 C35 62 42 54 50 40 Z" fill="#FF5A1F"/><path d="M38 62 L46 65 M62 62 L54 65" stroke="#120807" stroke-width="4" stroke-linecap="round"/></g>
+        <text x="150" y="26" transform="rotate(-8 150 26)" font-family="Chakra Petch, sans-serif" font-weight="700" font-size="17" fill="#8BEBFF" stroke="#06151B" stroke-width="3" paint-order="stroke">连杀 ×99</text>
+      </svg>
+    </div>
+  </div>
+  <div class="t-bottom">
+    <div class="chrow"><button class="ico" id="b-chp" aria-label="上一章">‹</button><div class="chname" id="t-ch"></div><button class="ico" id="b-chn" aria-label="下一章">›</button></div>
+    <div class="t-acts"><button class="btn big" id="b-start">开始</button><button class="btn ghost" id="b-meta"></button></div>
+    <div class="keys fine"><kbd>WASD</kbd>移动　<kbd>空格</kbd>冲刺　<kbd>Q</kbd><kbd>E</kbd><kbd>R</kbd>道具　<kbd>Esc</kbd>暂停　<kbd>回车</kbd>开始</div>
+    <div class="hint coarse">单手玩 · 按住拖动走位 · 停住火力翻倍 · 点两下冲刺</div>
+  </div>
+</div>
+
+<div id="s-pause" class="screen">
+  <div class="wrap center">
+    <h2 class="ht">暂停</h2>
+    <button class="btn big" id="b-resume">继续</button>
+    <div class="setrow"><button class="btn ghost set" data-set="mute"></button><button class="btn ghost set" data-set="music"></button><button class="btn ghost set" data-set="lowfx"></button></div>
+    <button class="btn ghost set coarse" data-set="drag"></button>
+    <button class="btn ghost set" data-set="vibe"></button>
+    <button class="btn ghost" id="b-quit">放弃本局</button>
+  </div>
+</div>
+
+<div id="s-up" class="screen">
+  <div class="wrap">
+    <div class="head"><div><span class="kick" id="u-kick">撑过来了</span><h2 class="ht" id="u-title"></h2></div><span class="coin" id="u-total"></span></div>
+    <div class="earn" id="u-earn"></div>
+    <div class="bonus" id="u-bonus"></div>
+    <div class="odds" id="u-odds"></div>
+    <div class="cards" id="u-cards"></div>
+    <div class="actions"><button class="btn ghost" id="b-reroll"></button><button class="btn" id="b-pick"></button></div>
+    <div class="keys fine">按 <kbd>1</kbd>–<kbd>3</kbd> 直接选择　<kbd>R</kbd> 重抽</div>
+  </div>
+</div>
+
+<div id="s-devil" class="screen">
+  <div class="wrap">
+    <div class="head"><div><span class="kick" style="color:var(--mag)">火之恶魔现身</span><h2 class="ht" style="color:var(--mag)">做个交易？</h2></div>
+      <svg viewBox="0 0 100 100" width="64" height="64" aria-hidden="true"><path d="M22 18 L34 40 M78 18 L66 40" stroke="#FF4FD8" stroke-width="7" stroke-linecap="round"/><path d="M50 14 C68 38 82 50 78 70 A28 28 0 0 1 22 70 C18 50 32 38 50 14 Z" fill="#6A0F5A"/><path d="M50 44 C60 56 66 62 63 74 A13 13 0 0 1 37 74 C35 64 42 56 50 44 Z" fill="#FF4FD8"/><path d="M36 60 L45 64 M64 60 L55 64" stroke="#FFD0F5" stroke-width="4" stroke-linecap="round"/></svg></div>
+    <div class="bonus" id="dv-cost"></div>
+    <div class="cards" id="dv-cards"></div>
+    <div class="actions"><button class="btn ghost" id="b-devil-no">不换，去商店</button><button class="btn fire" id="b-devil-yes"></button></div>
+  </div>
+</div>
+
+<div id="s-meta" class="screen">
+  <div class="wrap">
+    <div class="head"><div><span class="kick">死了也不白打</span><h2 class="ht">冰窖升级</h2></div><div class="coinpill"><span class="coin" id="m-shards" style="color:var(--ice)"></span></div></div>
+    <div class="bonus">永久生效，每局都带着。寒晶靠打火和通关获得。</div>
+    <div class="shelves" id="m-list"></div>
+    <div class="actions"><button class="btn" id="b-meta-back">返回</button></div>
+  </div>
+</div>
+
+<div id="s-shop" class="screen">
+  <div class="wrap">
+    <div class="head"><div><span class="kick" id="sh-next"></span><h2 class="ht">冰窖商店</h2></div><div class="coinpill"><span class="coin" id="sh-coins"></span></div></div>
+    <div class="bag" id="sh-inv"></div>
+    <div id="sh-feature"></div>
+    <div class="shelves" id="sh-shelves"></div>
+    <div class="actions"><button class="btn ghost" id="b-refresh"></button><button class="btn ghost" id="b-auto">帮我买<small>买完就出发</small></button><button class="btn fire" id="b-go"></button></div>
+    <div class="keys fine">按 <kbd>1</kbd>–<kbd>5</kbd> 购买　<kbd>R</kbd> 刷新　<kbd>回车</kbd> 出发</div>
+  </div>
+</div>
+
+<div id="s-dead" class="screen">
+  <div class="wrap">
+    <div class="melt">
+      <svg viewBox="0 0 120 60" aria-hidden="true">
+        <ellipse cx="60" cy="46" rx="54" ry="11" fill="#1E6F8A"/><ellipse cx="60" cy="43" rx="46" ry="8" fill="#3FB6DA"/>
+        <path d="M42 43 L50 22 L70 18 L78 40 Z" fill="#9BE9FB"/><path d="M50 22 L60 14 L70 18 Z" fill="#EAFBFF"/>
+        <path d="M53 31 L57 35 M57 31 L53 35 M63 30 L67 34 M67 30 L63 34" stroke="#0B2530" stroke-width="2" stroke-linecap="round"/>
+        <circle cx="18" cy="38" r="3" fill="#8BEBFF"/><circle cx="104" cy="40" r="2.4" fill="#8BEBFF"/>
+      </svg>
+      <h2 class="ht" id="d-title">化掉了</h2>
+    </div>
+    <div class="stamp" id="d-badge"></div>
+    <div class="miss" id="d-miss"></div>
+    <div class="bonus" id="d-gain"></div>
+    <div class="grid2" id="d-stats"></div>
+    <div class="rec" id="d-rec"></div>
+    <div class="build" id="d-build"></div>
+    <textarea id="d-share" rows="3" readonly aria-label="战绩文字"></textarea>
+    <div class="actions"><button class="btn ghost" id="b-copy">复制战绩</button><button class="btn" id="b-again">再来一局</button></div>
+    <div class="keys fine"><kbd>回车</kbd> 立即重开</div>
+  </div>
+</div>
+
+<script>
+'use strict';
+// ───────── 基础工具 ─────────
+const $ = id => document.getElementById(id);
+const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
+const rand = (a, b) => a + Math.random() * (b - a);
+const pct = v => Math.round(v * 100) + '%';
+const TAU = Math.PI * 2;
+const angDiff = (a, b) => Math.abs(Math.atan2(Math.sin(a - b), Math.cos(a - b)));
+const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const store = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+};
+const settings = Object.assign({ mute: false, music: true, lowfx: false, drag: true, vibe: true }, store.get('xc_settings', {}));
+const META_KEY = 'fw_mow_meta';
+const meta = Object.assign({ shards: 0, unlocked: 1 }, store.get(META_KEY, {}));
+meta.ups = Object.assign({ dmg: 0, hp: 0, coin: 0, magnet: 0, reroll: 0, start: 0 }, meta.ups || {});
+let chSel = meta.unlocked;
+const META = {
+  dmg:    { name: '寒锋传承', desc: '所有伤害 +8%', prices: [30, 60, 100, 150, 220], ic: 'c_dmg' },
+  hp:     { name: '冰芯加固', desc: '开局最大生命 +1', prices: [60, 140, 260], ic: 'c_heart' },
+  coin:   { name: '冰窖存款', desc: '开局金币 +15', prices: [30, 60, 100, 160], ic: 'p_pickup' },
+  magnet: { name: '霜磁传承', desc: '冰晶吸取范围 +20%', prices: [30, 70, 120], ic: 'c_magnet' },
+  reroll: { name: '多一次机会', desc: '开局重抽次数 +1', prices: [40, 90, 170], ic: 'c_ric' },
+  start:  { name: '先手技能', desc: '开局多选 1 个技能', prices: [80, 200], ic: 'c_multi' }
+};
+const CH_NAME = ['熔炉废土', '日轮焦原', '灾眼深渊'];
+const chName = c => CH_NAME[(c - 1) % 3] + (c > 3 ? ` · ${Math.floor((c - 1) / 3) + 1} 周目` : '');
+const REC_KEY = 'fw_mow_records';
+let records = Object.assign({ round: 0, kills: 0, combo: 0, r2deaths: 0, runs: 0 }, store.get(REC_KEY, {}));
+
+// ───────── 画布与坐标 ─────────
+const cv = $('c');
+let ctx = cv.getContext('2d', { alpha: false });
+let W = 1100, H = 640, SC = 1, OX = 0, OY = 0, DPR = 1, VW = 0, VH = 0;
+let INS = { t: 0, r: 0, b: 0, l: 0 }, HUDT = 0, CTLB = 0;
+// 自动画质：持续掉帧时一档一档降低，本局不再升回去，避免画质反复跳动
+// 0 全特效；1 关发光、粒子减半、分辨率 1.5 倍；2 分辨率再降到 1.2 倍
+const QCAP = [2, 1.5, 1.2];
+let QL = 0, qAvg = 16, qBad = 0;
+const lowq = () => settings.lowfx || QL >= 1;
+function qualityTick(ms) {
+  if (!G || G.state !== 'play' || ms > 120) return;
+  qAvg += (ms - qAvg) * .05;
+  qBad = qAvg > 26 ? qBad + ms : Math.max(0, qBad - ms);
+  if (qBad > 2500 && QL < 2) { QL++; qBad = 0; qAvg = 17; resize(); }
+}
+const isCoarse = () => touchMode || matchMedia('(pointer: coarse)').matches;
+function resize() {
+  DPR = Math.min(window.devicePixelRatio || 1, QCAP[QL]);
+  VW = innerWidth; VH = innerHeight;
+  cv.width = VW * DPR; cv.height = VH * DPR;
+  cv.style.width = VW + 'px'; cv.style.height = VH + 'px';
+  // 刘海、手势条等安全区，从 CSS env() 读出来
+  const cs = getComputedStyle($('probe'));
+  INS = { t: parseFloat(cs.paddingTop) || 0, r: parseFloat(cs.paddingRight) || 0, b: parseFloat(cs.paddingBottom) || 0, l: parseFloat(cs.paddingLeft) || 0 };
+  // 手机竖屏：顶部留给 HUD，底部留给冲刺和道具按钮，场地不被数字和拇指挡住
+  const band = VW < VH && isCoarse();
+  HUDT = band ? INS.t + 84 : 0;
+  CTLB = band ? INS.b + 44 : 0;
+  const AW = VW, AH = Math.max(200, VH - HUDT - CTLB);
+  // 竖屏用较短的短边，让手机上的物体更大
+  const S = AW >= AH ? 640 : 520;
+  if (AW >= AH) { H = S; W = clamp(S * AW / AH, S, S * 1.9); }
+  else { W = S; H = clamp(S * AH / AW, S, S * 1.9); }
+  SC = Math.min(AW / W, AH / H);
+  OX = (AW - W * SC) / 2; OY = HUDT + (AH - H * SC) / 2;
+  if (P) { P.x = clamp(P.x, P.r, W - P.r); P.y = clamp(P.y, P.r, H - P.r); }
+}
+
+// ───────── 音效（Web Audio 合成）─────────
+// 发声上限：高连杀时音效再多，同时最多响这么多个，防止手机音频卡顿
+let voices = 0;
+const VMAX = 22;
+let AC = null, master = null;
+function audioInit() {
+  if (AC) { if (AC.state === 'suspended') AC.resume(); return; }
+  try {
+    AC = new (window.AudioContext || window.webkitAudioContext)();
+    master = AC.createGain(); master.gain.value = settings.mute ? 0 : .45; master.connect(AC.destination);
+    musicInit();
+  } catch (e) { AC = null; }
+}
+function tone(f, dur, type = 'sine', vol = .2, slide = 1, delay = 0) {
+  if (!AC || settings.mute || voices >= VMAX) return;
+  voices++;
+  const t = AC.currentTime + delay, o = AC.createOscillator(), g = AC.createGain();
+  o.onended = () => { voices--; };
+  o.type = type; o.frequency.setValueAtTime(f, t);
+  if (slide !== 1) o.frequency.exponentialRampToValueAtTime(Math.max(30, f * slide), t + dur);
+  g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(1e-4, t + dur);
+  o.connect(g); g.connect(master); o.start(t); o.stop(t + dur + .02);
+}
+let noiseBuf = null;
+function getNoise() {
+  if (!noiseBuf) {
+    noiseBuf = AC.createBuffer(1, AC.sampleRate, AC.sampleRate);
+    const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+  }
+  return noiseBuf;
+}
+function noise(dur, vol = .3, freq = 800, type = 'lowpass', t = 0, dest = null) {
+  if (!AC || settings.mute || voices >= VMAX) return;
+  voices++;
+  t = t || AC.currentTime;
+  const s = AC.createBufferSource(), f = AC.createBiquadFilter(), g = AC.createGain();
+  s.onended = () => { voices--; };
+  s.buffer = getNoise(); f.type = type; f.frequency.value = freq;
+  g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(1e-4, t + dur);
+  s.connect(f); f.connect(g); g.connect(dest || master); s.start(t, Math.random() * .5, dur + .05);
+}
+const sfx = {
+  graze: c => { const f = 620 * Math.pow(2, Math.min(c, 24) / 12); tone(f, .13, 'triangle', .15); tone(f * 2, .08, 'sine', .05); },
+  hurt: () => { noise(.35, .45, 900); tone(200, .35, 'sawtooth', .16, .35); },
+  shieldBreak: () => { tone(1500, .25, 'square', .05, .4); noise(.18, .2, 5000); },
+  shieldUp: () => tone(700, .18, 'sine', .1, 2),
+  dash: () => noise(.14, .12, 4000),
+  beaconOn: () => [0, 4, 7, 12].forEach((s, i) => tone(330 * Math.pow(2, s / 12), .28, 'sawtooth', .07, 1, i * .06)),
+  roundEnd: () => [0, 7, 12, 19].forEach((s, i) => tone(392 * Math.pow(2, s / 12), .4, 'triangle', .12, 1, i * .07)),
+  pick: () => tone(660, .18, 'triangle', .15, 1.5),
+  coin: () => { tone(1320, .08, 'square', .05); tone(1760, .12, 'square', .05, 1, .06); },
+  item: () => [0, 5, 9, 14].forEach((s, i) => tone(880 * Math.pow(2, s / 12), .15, 'sine', .1, 1, i * .04)),
+  whistle: () => tone(1400, 1.1, 'sine', .04, .35),
+  boom: () => { noise(.6, .5, 300); tone(90, .5, 'sine', .3, .5); },
+  pop: () => { noise(.12, .25, 2500); tone(500, .1, 'square', .05, .5); },
+  shock: () => { tone(220, .5, 'sine', .3, 3); noise(.4, .3, 6000, 'highpass'); },
+  zero: () => { tone(110, 1.2, 'sawtooth', .2, 6); noise(1, .35, 8000, 'highpass'); },
+  alarm: () => { tone(880, .18, 'square', .06); tone(660, .18, 'square', .06, 1, .2); },
+  bossDown: () => [0, 3, 7, 12, 15, 19].forEach((s, i) => tone(523 * Math.pow(2, s / 12), .5, 'triangle', .12, 1, i * .08)),
+  die: () => { noise(.9, .5, 600); tone(300, .9, 'sine', .2, .2); },
+  shoot: () => tone(1900, .05, 'triangle', .025, .6),
+  // 击碎音走五声音阶，连杀越高音越高，最高涨三个八度
+  kill: c => {
+    const i = Math.floor(Math.min(c, 149) / 10), st = [0, 2, 4, 7, 9][i % 5] + 12 * Math.floor(i / 5), f = 330 * Math.pow(2, st / 12);
+    noise(.06, .12, 3000 + Math.min(c, 200) * 20); tone(f, .07, 'square', .035, 1.6);
+    if (c >= 30) tone(f * 2, .05, 'triangle', .03);
+  },
+  crit: () => { tone(2600, .06, 'square', .035, .5); noise(.04, .1, 6000, 'highpass'); },
+  crack: n => { tone(500 * Math.pow(2, Math.min(n, 24) / 12), .05, 'square', .05, .6); noise(.05, .16, 4500); },
+  gem: () => tone(1500 + Math.random() * 300, .05, 'sine', .04, 1.3),
+  nova: () => { noise(.3, .22, 5000, 'highpass'); tone(300, .3, 'sine', .14, 2.2); },
+  zap: () => { noise(.12, .18, 7000, 'highpass'); tone(2400, .1, 'sawtooth', .03, .4); },
+  levelUp: () => [0, 4, 7, 12, 16].forEach((s, i) => tone(523 * Math.pow(2, s / 12), .22, 'triangle', .1, 1, i * .05))
+};
+
+// ───────── 背景音乐：D 弗里几亚调式，程序生成 ─────────
+let musicGain = null, musicFilter = null;
+const mus = { next: 0, step: 0, bar: 0, bpm: 96 };
+function musicInit() {
+  musicFilter = AC.createBiquadFilter(); musicFilter.type = 'lowpass'; musicFilter.frequency.value = 16000;
+  musicGain = AC.createGain(); musicGain.gain.value = settings.music ? .32 : 0;
+  musicFilter.connect(musicGain); musicGain.connect(master);
+  mus.next = AC.currentTime + .1;
+  setInterval(musicTick, 25);
+}
+const semi = s => 73.42 * Math.pow(2, s / 12);
+function mnote(f, t, dur, type, vol) {
+  const o = AC.createOscillator(), g = AC.createGain();
+  o.type = type; o.frequency.setValueAtTime(f, t);
+  g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(1e-4, t + dur);
+  o.connect(g); g.connect(musicFilter); o.start(t); o.stop(t + dur + .02);
+}
+function kick(t, v) {
+  const o = AC.createOscillator(), g = AC.createGain();
+  o.frequency.setValueAtTime(110, t); o.frequency.exponentialRampToValueAtTime(38, t + .12);
+  g.gain.setValueAtTime(v, t); g.gain.exponentialRampToValueAtTime(1e-4, t + .25);
+  o.connect(g); g.connect(musicFilter); o.start(t); o.stop(t + .3);
+}
+function musicTick() {
+  if (!AC || AC.state !== 'running' || settings.mute || !settings.music) return;
+  const playing = G && G.state === 'play';
+  const target = playing ? Math.min(180, Math.min(172, 126 + 3 * (dl() - 1)) + (G.boss ? 10 : 0)) : 96;
+  mus.bpm += (target - mus.bpm) * .03;
+  const lowHp = playing && P.hp === 1;
+  musicFilter.frequency.setTargetAtTime(lowHp ? 900 : playing ? 16000 : 1600, AC.currentTime, .3);
+  if (mus.next < AC.currentTime - .2) mus.next = AC.currentTime + .05;
+  while (mus.next < AC.currentTime + .12) {
+    musicStep(mus.next, mus.step, playing);
+    mus.next += 60 / mus.bpm / 4;
+    mus.step = (mus.step + 1) % 16; if (!mus.step) mus.bar++;
+  }
+}
+function musicStep(t, s, playing) {
+  if (!playing) {
+    // 菜单 / 选卡 / 商店：只留低沉的低音脉冲
+    if (s % 4 === 0) mnote(semi([0, 0, 1, -2][mus.bar % 4]), t, .5, 'sawtooth', .05);
+    if (s === 0) kick(t, .22);
+    return;
+  }
+  const left = G.boss ? 99 : G.len - G.t, intense = left < 10 || !!G.boss;
+  if (s % 4 === 0) kick(t, .55);
+  if (s === 4 || s === 12) noise(.12, .16, 1800, 'bandpass', t, musicFilter);
+  if (intense || s % 2 === 0) noise(.04, s % 4 === 2 ? .07 : .035, 7000, 'highpass', t, musicFilter);
+  if (s % 2 === 0) mnote(semi([0, 0, 1, 0, 0, 0, -2, -2][s / 2]), t, .14, 'sawtooth', .11);
+  if (G.round >= 2 || enemies.length > 60)
+    mnote(semi([0, 3, 7, 1][s % 4] + 24), t, .09, 'square', .028);
+  // 连杀加层：30 连杀起多一层细碎的镲，100 连杀起再加高音琶音
+  if (G.combo >= 30 && s % 2 === 1) noise(.03, .06, 9000, 'highpass', t, musicFilter);
+  if (G.combo >= 100) mnote(semi([12, 15, 19, 24, 27, 24, 19, 15][s % 8] + 24), t, .08, 'square', .03);
+  if (G.boss && mus.bar % 2 === 0 && s % 4 === 0 && s < 12)
+    mnote(semi([0, 1, 7][s / 4] + 24 + (G.boss.heat / G.boss.max < .3 ? 12 : 0)), t, .35, 'triangle', .08);
+  if (P.hp === 1 && (s === 0 || s === 3)) mnote(55, t, .15, 'sine', .3);
+  if (left < 5 && s % 4 === 0) mnote(880 * Math.pow(2, Math.floor(5 - left) / 12), t, .08, 'square', .03);
+}
+
+// ───────── 技能卡 ─────────
+const QUAL = [
+  { n: '常态', m: 1.00, c: '#fff1e6' },
+  { n: '灼热', m: 1.25, c: '#ffb347' },
+  { n: '临界', m: 1.55, c: '#ff4fd8' }
+];
+const LV = ['I', 'II', 'III', 'IV', 'V'];
+// 割草版技能：每张卡最多 5 级，选了立刻生效。val(L) 是该等级的数值
+const CARDS = [
+  { id: 'multi', name: '冰锥分裂', school: '冰锥', max: 5, val: L => L + 1,
+    text: v => `每次多射 +${v} 根冰锥`, apply: (S, v) => { S.shots += v; } },
+  { id: 'rate', name: '急冻连射', school: '冰锥', max: 5, val: L => [.14, .26, .36, .45, .52][L],
+    text: v => `射击间隔 -${pct(v)}`, apply: (S, v) => { S.fireIv *= 1 - v; } },
+  { id: 'dmg', name: '寒锋', school: '冰锥', max: 5, val: L => [.3, .6, .95, 1.35, 1.8][L],
+    text: v => `所有伤害 +${pct(v)}`, apply: (S, v) => { S.dmgMul += v; } },
+  { id: 'pierce', name: '穿冰', school: '冰锥', max: 5, val: L => L + 1,
+    text: v => `冰锥可以穿透 ${v} 个敌人`, apply: (S, v) => { S.pierce += v; } },
+  { id: 'orbit', name: '环绕冰晶', school: '冰阵', max: 5, val: L => L + 2,
+    text: v => `${v} 块冰晶绕着你转，碰到就伤害`, apply: (S, v) => { S.orbit = v; } },
+  { id: 'nova', name: '霜爆', school: '冰阵', max: 5, val: L => [3, 2.6, 2.2, 1.8, 1.4][L],
+    text: (v, L) => `每 ${v} 秒在身边炸开一圈霜，半径 ${[100, 115, 130, 145, 165][L]}`, apply: (S, v, L) => { S.novaIv = v; S.novaR = [100, 115, 130, 145, 165][L]; } },
+  { id: 'chain', name: '冰链闪电', school: '冰阵', max: 5, val: L => [3, 4, 6, 8, 11][L],
+    text: v => `每 1.2 秒放一道冰链，连跳 ${v} 个敌人`, apply: (S, v) => { S.chain = v; } },
+  { id: 'shatter', name: '碎冰连爆', school: '连爆', max: 5, val: L => [.2, .3, .4, .5, .6][L],
+    text: v => `敌人被打碎时 ${pct(v)} 概率爆炸，波及周围`, apply: (S, v) => { S.shatter = v; } },
+  { id: 'magnet', name: '霜磁', school: '身法', max: 5, val: L => [.5, 1, 1.6, 2.3, 3][L],
+    text: v => `冰晶吸取范围 +${pct(v)}`, apply: (S, v) => { S.magnet += v; } },
+  { id: 'move', name: '霜步', school: '身法', max: 5, val: L => [.08, .15, .21, .27, .32][L],
+    text: v => `移速 +${pct(v)}`, apply: (S, v) => { S.moveAdd = v; } },
+  { id: 'ram', name: '冰撞', school: '身法', max: 5, val: L => [6, 10, 15, 21, 28][L],
+    text: v => `冲刺撞到的敌人受到 ${v} 点伤害，冲刺冷却缩短`, apply: (S, v, L) => { S.ram = v; S.dashCdRed = .1 + .06 * L; } },
+  { id: 'front', name: '正前齐射', school: '冰锥', max: 3, val: L => L + 2,
+    text: v => `每一路冰锥变成 ${v} 根并排齐射`, apply: (S, v) => { S.front = v - 1; } },
+  { id: 'diag', name: '斜向冰锥', school: '冰锥', max: 3, val: L => (L + 1) * 2,
+    text: v => `额外向两侧斜射 ${v} 根`, apply: (S, v, L) => { S.diag = [.7, .42, 1.05].slice(0, L + 1); } },
+  { id: 'back', name: '背后冰锥', school: '冰锥', max: 3, val: L => L,
+    text: (v, L) => ['身后也射 1 根', '身后和左右各射 1 根', '身后和左右的冰锥伤害 +60%'][L],
+    apply: (S, v, L) => { S.back = Math.min(2, L + 1); S.backMul = L >= 2 ? 1.6 : 1; } },
+  { id: 'ric', name: '弹射', school: '冰锥', max: 5, val: L => L + 1,
+    text: v => `冰锥打中后弹向附近的敌人，最多 ${v} 次`, apply: (S, v) => { S.ric = v; } },
+  { id: 'bounce', name: '墙壁反弹', school: '冰锥', max: 3, val: L => L + 1,
+    text: v => `冰锥碰到场地边缘会反弹 ${v} 次`, apply: (S, v) => { S.bounce = v; } },
+  { id: 'homing', name: '追踪冰锥', school: '冰锥', max: 1, val: () => 1,
+    text: () => `冰锥会拐弯追着敌人飞`, apply: S => { S.homing = 1; } },
+  { id: 'crit', name: '致命寒锋', school: '冰锥', max: 5, val: L => [.12, .2, .28, .36, .45][L],
+    text: v => `暴击率 +${pct(v)}，暴击造成 2.5 倍伤害`, apply: (S, v) => { S.crit += v; } },
+  { id: 'freeze', name: '冰封', school: '冰阵', max: 5, val: L => [.08, .12, .16, .2, .25][L],
+    text: v => `冰锥命中时 ${pct(v)} 概率把敌人冻住 1.6 秒`, apply: (S, v) => { S.freeze = v; } },
+  { id: 'pets', name: '冰灵伙伴', school: '冰阵', max: 3, val: L => L + 1,
+    text: v => `${v} 只小冰灵跟着你一起射击`, apply: (S, v) => { S.pets = v; } },
+  { id: 'heart', name: '冰芯', school: '护持', max: 3, val: L => L + 1,
+    text: () => `最大生命 +1，并回满生命`, apply: (S, v) => { S.hpAdd = v; } }
+];
+const CARD = Object.fromEntries(CARDS.map(c => [c.id, c]));
+function baseStats() {
+  return { speed: 250, moveAdd: 0, dashCdRed: 0, dashInv: .16, shieldRegen: 16, shieldRegenMul: 1, hurtSpd: 0, hurtDur: 0,
+    enemySpd: 0, dmg: 2, dmgMul: 1, fireIv: .5, shots: 1, pierce: 0, orbit: 0, novaIv: 0, novaR: 0, chain: 0, shatter: 0, magnet: 0, ram: 4, hpAdd: 0,
+    front: 0, diag: [], back: 0, backMul: 1, ric: 0, bounce: 0, homing: 0, crit: .05, critMul: 2.5, freeze: 0, pets: 0 };
+}
+function recomputeStats() {
+  const S = baseStats();
+  for (const id in G.owned) { const o = G.owned[id], c = CARD[id]; c.apply(S, c.val(o.L), o.L); }
+  if (G.evo.frost) S.orbit += 2;
+  if (G.evo.zero) S.novaR *= 1.4;
+  if (G.evo.thunder) S.chain *= 2;
+  if (G.devil.hell) S.dmgMul += .6 * G.devil.hell;
+  if (G.devil.storm) { S.shatter = Math.min(1, S.shatter + .35 * G.devil.storm); S.boomR = 1 + .5 * G.devil.storm; }
+  S.dmg *= S.dmgMul * (1 + .15 * G.perm.graze) * (1 + .08 * meta.ups.dmg);
+  S.magnet += .2 * meta.ups.magnet;
+  if (G.buffFire) S.fireIv *= .5;
+  G.S = S;
+}
+// 风险评分 → 品质概率（常态 / 灼热 / 临界）
+function qualOdds(r) {
+  if (r < .75) return [.75, .23, .02];
+  if (r < 1.10) return [.55, .38, .07];
+  if (r < 1.50) return [.35, .48, .17];
+  return [.20, .45, .35];
+}
+function rollQual(r) { const o = qualOdds(r), x = Math.random(); return x < o[0] ? 0 : x < o[0] + o[1] ? 1 : 2; }
+
+// ───────── 敌人图鉴 ─────────
+// from：首次出现关卡；cap：同时存在上限；w：生成权重；hp：第 1 关时的血量（之后逐关上涨）；xp：掉落冰晶数
+// 火灵单独按波次刷，不走这张表的权重
+const ROSTER = {
+  ember:   { name: '余烬火灵', from: 1,  w: 0,   cap: () => 0, r: 13, hp: 2, xp: 1 },
+  comet:   { name: '烈焰火梭', from: 3,  w: .5,  cap: () => 3, r: 12, hp: 3, xp: 1 },
+  core:    { name: '爆燃炉心', from: 3,  w: .35, cap: r => 1 + Math.floor((r - 3) / 3), r: 16, hp: 12, xp: 4 },
+  lobber:  { name: '焦炭投手', from: 4,  w: .3,  cap: r => r < 9 ? 1 : 2, r: 15, hp: 10, xp: 4 },
+  crawler: { name: '熔痕爬兽', from: 6,  w: .25, cap: () => 2, r: 15, hp: 16, xp: 5 },
+  cracker: { name: '爆竹火鬼', from: 7,  w: .3,  cap: r => r < 12 ? 2 : 3, r: 14, hp: 8, xp: 3 },
+  priest:  { name: '火旋祭司', from: 9,  w: .15, cap: () => 1, r: 17, hp: 40, xp: 10 },
+  elite:   { name: '精英火灵', from: 3,  w: .2,  cap: r => r < 8 ? 1 : 2, r: 20, hp: 45, xp: 12 }
+};
+const INTRO = {
+  2: ['第 2 关', '火灵成群涌来，还会把你团团围住！'],
+  3: ['新敌人：爆燃炉心 · 精英火灵', '炉心蓄力喷火星，先打碎它；精英必掉道具'],
+  4: ['新敌人：焦炭投手', '会往你脚下抛火球'],
+  6: ['新敌人：熔痕爬兽', '身后的暗红轨迹会被点燃'],
+  7: ['新敌人：爆竹火鬼 · 陨火', '蓄力前打碎它就不会炸'],
+  9: ['新敌人：火旋祭司', '旋转火流，血很厚']
+};
+// 割草版 Boss 的热量就是血量：冰锥打它会降温
+const BOSSES = {
+  furnace: { name: '熔炉暴君', heat: 2200, r: 34 },
+  wheel:   { name: '三首日轮', heat: 2600, r: 22 },
+  eye:     { name: '灾焰之眼', heat: 3000, r: 40 }
+};
+
+// ───────── 场上拾取的道具 ─────────
+const ITEMS = {
+  prism:     { name: '冰晶棱镜', w: 22, dur: 7, glyph: '◇', desc: '射速翻倍' },
+  magnet:    { name: '霜磁石',   w: 16, dur: 0, glyph: 'U', desc: '吸走全场冰晶' },
+  spikes:    { name: '急冻鞋钉', w: 16, dur: 6, glyph: '»', desc: '移速 +18%，冲刺冷却 -25%' },
+  frost:     { name: '凝霜护片', w: 14, dur: 0, glyph: '⬡', desc: '补满护盾，已有护盾则冲刺立即就绪' },
+  bubble:    { name: '冷气泡泡', w: 14, dur: 0, glyph: '○', desc: '炸开一圈冷气，推开并伤害周围火焰' },
+  hourglass: { name: '慢燃沙漏', w: 10, dur: 4, glyph: '⧗', desc: '身边 180 内的火焰减速 30%' },
+  drop:      { name: '融水滴',   w: 8,  dur: 0, glyph: '✚', desc: '恢复 1 点生命' }
+};
+// ───────── 商店：背包道具（带进场内按 Q/E/R 使用）与永久强化 ─────────
+const CONS = {
+  shock:  { name: '霜环震退器', price: 18, max: 3, glyph: '◎', desc: '震开并重伤身边 260 内的火焰，余下的减速 40%，持续 2 秒' },
+  zero:   { name: '绝对零度瓶', price: 55, max: 1, glyph: '❄', desc: '冻碎全场火焰，每一只都掉冰晶（Boss 扣一大截热量）', cost: '每关限用 1 次' },
+  mirror: { name: '冰镜护符',   price: 32, max: 2, glyph: '◈', desc: '3 秒内免疫一次伤害，挡下时震开周围火焰' },
+  step:   { name: '雪步结晶',   price: 24, max: 3, glyph: '✦', desc: '5 秒内移速 +35%，受击判定缩小 20%' },
+  clock:  { name: '寒霜时钟',   price: 42, max: 2, glyph: '◷', desc: '4 秒内全场火焰减速 55%' },
+  decoy:  { name: '冰封诱饵',   price: 28, max: 2, glyph: '☗', desc: '放下诱饵 5 秒，吸走追踪型火焰，结束时震开周围' }
+};
+const PERM = {
+  hp:     { name: '冰芯扩容', desc: '最大生命 +1，并回复 1 点', prices: [80, 130, 190] },
+  speed:  { name: '寒流推进', desc: '移速永久 +5%', prices: [65, 105, 160] },
+  graze:  { name: '寒锋淬火', desc: '所有伤害永久 +15%', prices: [60, 100, 150] },
+  pickup: { name: '霜磁吸附', desc: '冰晶和道具拾取范围永久 +20%', prices: [45, 75, 110] }
+};
+const REFRESH = [8, 15, 28, 47, 72];
+const refreshCost = n => n < REFRESH.length ? REFRESH[n] : 72 + 30 * (n - 4);
+const SLOT_KEYS = ['Q', 'E', 'R'];
+
+// ───────── 图标：24×24 描边路径，界面（SVG）和画布（Path2D）共用 ─────────
+const ICON = {
+  shock: 'M9 12a3 3 0 1 0 6 0a3 3 0 1 0-6 0M5 12a7 7 0 0 1 7-7M19 12a7 7 0 0 1-7 7M12 1v3M12 20v3M1 12h3M20 12h3',
+  zero: 'M9 2h6M10 2v6L5 19a2 2 0 0 0 2 3h10a2 2 0 0 0 2-3l-5-11V2M8 15h8',
+  mirror: 'M12 2l8 4v6c0 5-4 8-8 10-4-2-8-5-8-10V6zM9 9l6 6',
+  step: 'M12 2v20M3 7l18 10M21 7L3 17',
+  clock: 'M4 13a8 8 0 1 0 16 0a8 8 0 1 0-16 0M12 9v4l3 2M9 2h6',
+  decoy: 'M7 10l5-6 5 6v8H7zM10 13h1M13 13h1',
+  p_hp: 'M4 8l8-5 8 5v8l-8 5-8-5zM12 9v6M9 12h6',
+  p_speed: 'M5 17l5-5-5-5M12 17l5-5-5-5',
+  p_graze: 'M9 12a3 3 0 1 0 6 0a3 3 0 1 0-6 0M5 7a9 9 0 0 0 0 10M19 7a9 9 0 0 1 0 10',
+  p_pickup: 'M6 3v8a6 6 0 0 0 12 0V3M6 7h4M14 7h4',
+  heal: 'M12 3c-3 4-6 7-6 11a6 6 0 0 0 12 0c0-4-3-7-6-11zM10 14h4M12 12v4',
+  c_move: 'M5 19l5-5M9 19l6-6M13 19l7-7M14 5h5v5',
+  c_dashcd: 'M3 17h14l4-4M7 13h8M10 9h6',
+  c_afterdash: 'M14 12h7M3 8h6M3 16h6M6 12h5M18 8l3 4-3 4',
+  c_shield: 'M12 2l8 4v6c0 5-4 8-8 10-4-2-8-5-8-10V6zM12 8v6M9 11l3 3 3-3',
+  c_dashinv: 'M4 5h8v14H4zM15 7h5v10h-5',
+  c_hurtspd: 'M12 2l3 7-3 3 4 4-4 6M8 6l-4 4 4 4',
+  c_graze: 'M10 12a2 2 0 1 0 4 0a2 2 0 1 0-4 0M6 6a8.5 8.5 0 0 0 0 12M18 6a8.5 8.5 0 0 1 0 12M9 9a4 4 0 0 0 0 6M15 9a4 4 0 0 1 0 6',
+  c_chain: 'M6 16v-5a6 6 0 0 1 12 0v5l2 2H4zM10 21h4',
+  c_slow: 'M6 3h12M6 21h12M7 3c0 6 10 6 10 9s-10 3-10 9M17 3c0 6-10 6-10 9',
+  c_danger: 'M12 3c3 4 5 6 5 10a5 5 0 0 1-10 0c0-2 1-3 2-4 0 2 1 3 2 3 0-3-1-5 1-9z',
+  c_beacon: 'M12 6l5 6-5 6-5-6zM3 12a9 9 0 1 0 18 0a9 9 0 1 0-18 0',
+  c_bare: 'M12 2l8 4v6c0 5-4 8-8 10-4-2-8-5-8-10V6zM12 2l-2 8 4 3-2 9',
+  i_prism: 'M12 2l7 7-7 13-7-13zM5 9h14M12 2v20',
+  i_magnet: 'M6 3v8a6 6 0 0 0 12 0V3M6 7h4M14 7h4',
+  c_multi: 'M12 21V9M12 9l-3 3M12 9l3 3M5 19L9 7M19 19L15 7M12 3v2',
+  c_rate: 'M4 12h6M4 7h9M4 17h9M16 7l5 5-5 5',
+  c_dmg: 'M12 2l3 9h-6zM9 11l3 11 3-11',
+  c_pierce: 'M2 12h17M15 8l4 4-4 4M7 7v10M12 7v10',
+  c_orbit: 'M3 12a9 9 0 1 0 18 0a9 9 0 1 0-18 0M10 12a2 2 0 1 0 4 0a2 2 0 1 0-4 0M19 5l2 2-2 2-2-2z',
+  c_nova: 'M12 2v4M12 18v4M2 12h4M18 12h4M5 5l3 3M16 16l3 3M19 5l-3 3M8 16l-3 3M9 12a3 3 0 1 0 6 0a3 3 0 1 0-6 0',
+  c_chain: 'M13 2L6 13h5l-2 9 8-12h-5z',
+  c_shatter: 'M12 2l2 6 6-2-4 5 5 4-6 0 1 6-4-4-4 4 1-6H3l5-4-4-5 6 2z',
+  c_magnet: 'M6 3v8a6 6 0 0 0 12 0V3M6 7h4M14 7h4',
+  c_ram: 'M3 12h10M8 7l5 5-5 5M16 5v14M20 8v8',
+  c_heart: 'M4 8l8-5 8 5v8l-8 5-8-5zM12 9v6M9 12h6',
+  c_front: 'M4 8h12M4 12h14M4 16h12M16 5l5 3-5 3M18 13l3 3-3 3',
+  c_diag: 'M12 20V4M12 20L4 8M12 20l8-12M9 4h6',
+  c_back: 'M12 3v18M12 3l-3 3M12 3l3 3M12 21l-3-3M12 21l3-3M3 12h18',
+  c_ric: 'M3 18l6-8 5 6 7-11M17 5h4v4',
+  c_bounce: 'M3 3v18M21 3v18M7 18l7-12 3 5',
+  c_homing: 'M4 20c0-8 6-14 14-14M14 3l4 3-4 3M17 17a2 2 0 1 0 4 0a2 2 0 1 0-4 0',
+  c_crit: 'M12 2l2.5 6.5L21 9l-5 4.5L17.5 21 12 17l-5.5 4L8 13.5 3 9l6.5-.5z',
+  c_freeze: 'M12 2v20M3 7l18 10M21 7L3 17M9 4l3 2 3-2M9 20l3-2 3 2',
+  c_pets: 'M8 9l4-6 4 6-4 4zM5 17a3 3 0 1 0 6 0a3 3 0 1 0-6 0M13 17a3 3 0 1 0 6 0a3 3 0 1 0-6 0',
+  i_spikes: 'M4 16h12l4-4M6 16l2 4M12 16l2 4M6 12V6h6l2 6',
+  i_frost: 'M12 2l8 4v6c0 5-4 8-8 10-4-2-8-5-8-10V6z',
+  i_bubble: 'M4 12a8 8 0 1 0 16 0a8 8 0 1 0-16 0M7 9a2 2 0 1 0 4 0a2 2 0 1 0-4 0',
+  i_hourglass: 'M6 3h12M6 21h12M7 3c0 6 10 6 10 9s-10 3-10 9M17 3c0 6-10 6-10 9',
+  i_drop: 'M12 3c-3 4-6 7-6 11a6 6 0 0 0 12 0c0-4-3-7-6-11z',
+  shell: 'M12 2l8 4v6c0 5-4 8-8 10-4-2-8-5-8-10V6z',
+  sound: 'M4 9h4l5-4v14l-5-4H4zM17 9a4 4 0 0 1 0 6',
+  music: 'M9 18V5l11-2v13M3 18a3 3 0 1 0 6 0a3 3 0 1 0-6 0M14 16a3 3 0 1 0 6 0a3 3 0 1 0-6 0',
+  lowfx: 'M12 3c3 4 5 6 5 10a5 5 0 0 1-10 0c0-2 1-3 2-4 0 2 1 3 2 3 0-3-1-5 1-9z',
+  vibe: 'M8 3h8v18H8zM4 8v8M20 8v8M11 18h2',
+  drag: 'M9 11V5a2 2 0 0 1 4 0v6M13 10V8a2 2 0 0 1 4 0v5c0 4-3 8-7 8-3 0-5-2-6-4l-2-4a2 2 0 0 1 3-2l2 2',
+  stick: 'M3 12a9 9 0 1 0 18 0a9 9 0 1 0-18 0M9 12a3 3 0 1 0 6 0a3 3 0 1 0-6 0'
+};
+const svgIcon = k => `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${ICON[k]}"/></svg>`;
+const ICON2D = {};
+function drawIcon(k, x, y, size, c, lw = 2) {
+  const p = ICON2D[k] || (ICON2D[k] = new Path2D(ICON[k]));
+  ctx.save(); ctx.translate(x - size / 2, y - size / 2); ctx.scale(size / 24, size / 24);
+  ctx.strokeStyle = c; ctx.lineWidth = lw; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.stroke(p); ctx.restore();
+}
+// 流派颜色与品质外观（常态 / 灼热 / 临界）
+const SCHOOL_C = { 冰锥: '#8BEBFF', 冰阵: '#C3B6FF', 连爆: '#FFB020', 身法: '#9FE8C8', 护持: '#C9F2D6' };
+const QSTYLE = [
+  { b: '#5A3A30', bg: '#1C0E0B', l: '#C2A193', v: '#8BEBFF' },
+  { b: '#FFB347', bg: '#241508', l: '#FFB347', v: '#FFB347' },
+  { b: '#FF4FD8', bg: '#200A1C', l: '#FF4FD8', v: '#FF4FD8' }
+];
+
+// ───────── 常量 ─────────
+const GRAZE_R = 20, DANGER_R = 70, DASH_T = .13, DASH_SPD = 1150, DASH_CD = 2.8;
+const BASE_RATE = 2, DANGER_RATE = 14, GRAZE_VAL = 15, BASE_PER_SEC = 13.6;
+const roundLen = r => r === 1 ? 16 : Math.min(60, 28 + 2 * r);
+const COL = {
+  ember: '#ff5a1f', comet: '#ffb347', core: '#ff6a2a', lobber: '#ff7a3a', crawler: '#ff3d2e', cracker: '#ff2e4a',
+  priest: '#ff4fd8', elite: '#ff4fd8', boss: '#ffd24a', spark: '#ff8a3d', player: '#8bebff', beacon: '#ffd24a', warn: '#ffb020'
+};
+const FLAME = {
+  ember: ['#8a1a08', '#ff5a1f', '#ffd25a'],
+  comet: ['#ff3d00', '#ff9a1f', '#fff3b0'],
+  elite: ['#c02a00', '#ff9a1f', '#fffbe0'],
+  small: ['#a32008', '#ff7a1f', '#ffe08a'],
+  violet: ['#6a0f5a', '#ff4fd8', '#ffd0f5']
+};
+
+// ───────── 状态 ─────────
+let G, P;
+let enemies = [], sparks = [], warns = [], shells = [], grounds = [], items = [], parts = [], floats = [];
+let bolts = [], gems = [], booms = [], zaps = [], novas = [];
+const ash = Array.from({ length: 40 }, () => ({ x: Math.random(), y: Math.random(), s: rand(.3, 1) }));
+const dl = () => G.round + 3 * (G.ch - 1);
+const chMul = () => 1 + .5 * (G.ch - 1);
+function newGame() {
+  G = { ch: chSel, dir: 1, won: false, state: 'play', round: 0, len: 24, t: 0, threat: 0, roundThreat: 0, combo: 0, maxCombo: 0, comboT: 0,
+    spawnAcc: 0, beacon: null, beaconActive: false, slowT: 0, slowCd: 0, shake: 0, flash: 0, flashC: '#fff',
+    rerolls: 2 + meta.ups.reroll, offers: [], owned: {}, S: baseStats(), time: 0, meteorT: 0, cometT: 0, lastSide: -1, itemTimes: [], banner: null, eliteCount: 0,
+    coins: 15 * meta.ups.coin, coinAcc: 0, roundCoins: 0, rs: null, penaltyT: 0, zeroUsed: false, inv: [], perm: { hp: 0, speed: 0, graze: 0, pickup: 0 },
+    boss: null, beam: null, decoy: null, bossCooled: 0, hintShown: false, shop: null, earn: null,
+    evo: {}, volN: 0, devil: {}, devilOffers: [], echoT: 0, echoA: 0, reapN: 0, pets: [], kills: 0, roundKills: 0, lv: 1, xp: 0, pendingLv: 0, afterUp: null, fireT: 0, novaT: 0, chainT: 0, orbA: 0, ringT: 0, killSfx: 0, milestone: 0 };
+  P = { x: W / 2, y: H / 2, vx: 0, vy: 0, r: 9, hp: 3, maxHp: 3, shield: true, shieldT: 0, inv: 0, dashT: 0, dashInv: 0, dashCdT: 0,
+    dx: 1, dy: 0, afterT: 0, hurtT: 0, trail: [], buffs: {}, dashId: 0 };
+  parts = []; floats = []; gems = [];
+  records.runs++; store.set(REC_KEY, records);
+  P.maxHp += meta.ups.hp; P.hp = P.maxHp;
+  recomputeStats();
+  nextRound();
+  G.opening = true; G.pendingLv = 1 + meta.ups.start; levelUp();
+}
+const xpNeed = lv => 5 + 4 * (lv - 1) + Math.floor(Math.pow(lv - 1, 1.8));
+function nextRound() {
+  G.round++; G.len = roundLen(G.round); G.t = 0; G.roundThreat = 0; G.roundKills = 0; G.roundCoins = 0;
+  G.beacon = null; G.beaconActive = false; G.eliteCount = 0; G.beam = null; G.decoy = null;
+  G.spawnAcc = 2; G.meteorT = 3; G.cometT = 0; G.ringT = G.round === 2 ? 7 : 10; G.milestone = 0;
+  G.penaltyT = 0; G.zeroUsed = false;
+  G.rs = { grazes: 0, beaconSec: 0 };
+  enemies = []; sparks = []; warns = []; shells = []; grounds = []; items = []; bolts = []; booms = []; zaps = []; novas = [];
+  P.buffs = {};
+  const n = 1 + (G.len > 40 ? 1 : 0) + (Math.random() < .3 ? 1 : 0);
+  G.itemTimes = Array.from({ length: n }, () => rand(3, G.len - 6)).sort((a, b) => a - b);
+  G.boss = null;
+  if (G.round % 5 === 0) startBoss();
+  else if (G.round === 2 ? INTRO[2] : INTRO[dl()]) { const it = G.round === 2 ? INTRO[2] : INTRO[dl()]; G.banner = { title: it[0], sub: it[1], t: 3.2, c: G.round === 2 ? '#ff2e4a' : '#ffd24a' }; }
+  else G.banner = null;
+  P.inv = Math.max(P.inv, .8);
+  G.state = 'play';
+  showScreen(null);
+}
+const roundMul = () => 1 + .12 * (G.round - 1);
+
+// ───────── 输入 ─────────
+const keys = new Set();
+let dashQueued = false, touchMode = true, joy = null;
+addEventListener('keydown', e => {
+  const k = e.key.toLowerCase();
+  if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', ' '].includes(k)) e.preventDefault();
+  if (e.repeat) return;
+  keys.add(k);
+  if (k === 'm') { toggleSet('mute'); return; }
+  if (!G) { if (k === 'enter') start(); return; }
+  if (G.state === 'play') {
+    if (k === ' ' || k === 'shift' || k === 'j' || k === 'k') dashQueued = true;
+    const si = ['q', 'e', 'r'].indexOf(k); if (si >= 0) useSlot(si);
+  }
+  if (k === 'escape' || k === 'p') { if (G.state === 'play') pause(); else if (G.state === 'pause') resume(); }
+  if (G.state === 'up') {
+    if (k >= '1' && k <= '7') pick(+k - 1);
+    else if (k === 'r') reroll();
+    else if (k === 'enter') confirmPicks();
+  } else if (G.state === 'shop') {
+    if (k >= '1' && k <= '5') buy(+k - 1);
+    else if (k === 'r') refreshShop();
+    else if (k === 'enter') leaveShop();
+  } else if (G.state === 'dead' && k === 'enter' && G.deadT > .6) start();
+});
+addEventListener('keyup', e => keys.delete(e.key.toLowerCase()));
+addEventListener('blur', () => { keys.clear(); if (G && G.state === 'play') pause(); });
+document.addEventListener('visibilitychange', () => { if (document.hidden && G && G.state === 'play') pause(); });
+// 单手操作：触屏上只剩右上角暂停键。按住拖动走位，快速点两下冲刺，道具被碰到时自动用
+const touchBtns = () => [{ id: 'pause', x: VW - INS.r - 32, y: INS.t + 30, r: 22 }];
+let lastTap = null;
+// 触屏移动有两种方式：
+//   拖动跟手（默认）：手指在任意空白处滑多少，小冰块就跟着走多少，手指停下它也立刻停下
+//   摇杆：按下处出现摇杆，拖出圈外时摇杆中心跟着手指走，换方向不用把手指拖回原点
+const JOY_R = 44, JOY_FULL = 28, DRAG_LEAD = 56, DRAG_CAP = 1.8;
+cv.addEventListener('pointerdown', e => {
+  if (e.pointerType !== 'mouse' && !touchMode) { touchMode = true; resize(); }
+  audioInit();
+  if (!G || G.state !== 'play') return;
+  if (touchMode) {
+    for (const b of touchBtns()) {
+      if (Math.hypot(e.clientX - b.x, e.clientY - b.y) < b.r * 1.25) {
+        if (b.id === 'pause') pause();
+        return;
+      }
+    }
+    // 双击：上一次是短按、间隔不到 0.3 秒、位置相近 → 冲刺，同时照常开始拖动
+    const now = performance.now();
+    if (lastTap && now - lastTap.t < 300 && Math.hypot(e.clientX - lastTap.x, e.clientY - lastTap.y) < 90) { dashQueued = true; lastTap = null; }
+  }
+  if (joy) return;
+  joy = { id: e.pointerId, drag: !!settings.drag, ox: e.clientX, oy: e.clientY, x: e.clientX, y: e.clientY, tx: P.x, ty: P.y, t0: performance.now(), sx: e.clientX, sy: e.clientY };
+  try { cv.setPointerCapture(e.pointerId); } catch (err) {}
+});
+cv.addEventListener('pointermove', e => {
+  if (!joy || e.pointerId !== joy.id) return;
+  // 合并事件：高刷屏上一帧内可能有多次移动，全部累加，避免丢掉位移
+  const evs = e.getCoalescedEvents ? e.getCoalescedEvents() : [];
+  const last = evs.length ? evs[evs.length - 1] : e;
+  if (joy.drag) {
+    joy.tx += (last.clientX - joy.x) / SC; joy.ty += (last.clientY - joy.y) / SC;
+    clampDrag();
+  }
+  joy.x = last.clientX; joy.y = last.clientY;
+  if (!joy.drag) {
+    const jx = joy.x - joy.ox, jy = joy.y - joy.oy, d = Math.hypot(jx, jy);
+    if (d > JOY_R) { joy.ox = joy.x - jx / d * JOY_R; joy.oy = joy.y - jy / d * JOY_R; }
+  }
+});
+// 拖动目标不能离小冰块太远：手指甩得再快，松手时小冰块也不会继续滑出去很远
+function clampDrag() {
+  joy.tx = clamp(joy.tx, P.r, W - P.r); joy.ty = clamp(joy.ty, P.r, H - P.r);
+  const dx = joy.tx - P.x, dy = joy.ty - P.y, d = Math.hypot(dx, dy);
+  if (d > DRAG_LEAD) { joy.tx = P.x + dx / d * DRAG_LEAD; joy.ty = P.y + dy / d * DRAG_LEAD; }
+}
+const endJoy = e => {
+  if (!joy || e.pointerId !== joy.id) return;
+  const short = performance.now() - joy.t0 < 220 && Math.hypot(e.clientX - joy.sx, e.clientY - joy.sy) < 24;
+  lastTap = short ? { t: performance.now(), x: e.clientX, y: e.clientY } : null;
+  joy = null;
+};
+cv.addEventListener('pointerup', endJoy); cv.addEventListener('pointercancel', endJoy);
+function inputDir() {
+  let x = 0, y = 0;
+  if (keys.has('a') || keys.has('arrowleft')) x--;
+  if (keys.has('d') || keys.has('arrowright')) x++;
+  if (keys.has('w') || keys.has('arrowup')) y--;
+  if (keys.has('s') || keys.has('arrowdown')) y++;
+  const m = Math.hypot(x, y);
+  if (m) return { x: x / m, y: y / m, m: 1 };
+  if (joy && joy.drag) {
+    const dx = joy.tx - P.x, dy = joy.ty - P.y, d = Math.hypot(dx, dy);
+    if (d > 1) return { x: dx / d, y: dy / d, m: 1, drag: d };
+    return { x: 0, y: 0, m: 0, drag: 0 };
+  }
+  if (joy) {
+    const jx = joy.x - joy.ox, jy = joy.y - joy.oy, d = Math.hypot(jx, jy);
+    if (d > 4) return { x: jx / d, y: jy / d, m: Math.min(1, d / JOY_FULL) };
+  }
+  return { x: 0, y: 0, m: 0 };
+}
+
+// ───────── 特效 ─────────
+function burst(x, y, n, c, spd = 180, life = .5, size = 2.5) {
+  if (lowq()) n = Math.ceil(n / 2);
+  for (let i = 0; i < n && parts.length < 900; i++) {
+    const a = Math.random() * TAU, s = spd * rand(.3, 1);
+    parts.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, life: life * rand(.6, 1), max: life, c, s: size * rand(.6, 1.3) });
+  }
+}
+function floatText(x, y, txt, c, size = 15) { floats.push({ x, y, txt, c, size, life: .9 }); }
+// 震动：安卓浏览器支持，iPhone 不支持时什么也不做。普通火灵不震，否则手机会一直嗡嗡响
+const canVibe = !!navigator.vibrate;
+let lastBuzz = 0;
+function buzz(p, force) {
+  if (!canVibe || !settings.vibe) return;
+  const now = performance.now();
+  if (!force && now - lastBuzz < 70) return;
+  lastBuzz = now;
+  try { navigator.vibrate(p); } catch (e) {}
+}
+// 顿帧：世界停一小下，带冷却，高射速时不会一直卡顿
+function hitStop(t, cd) { if (G.stopCd > 0) return; G.stopT = t; G.stopCd = cd; }
+function shake(v) { G.shake = Math.max(G.shake, v); }
+function flash(v, c) { if (settings.lowfx) v *= .3; G.flash = Math.max(G.flash, v); G.flashC = c; }
+// 把半径 R 内的火焰向外推开（Boss 本体、祭司不动）
+function push(x, y, R, force) {
+  for (const o of enemies.concat(sparks)) {
+    if (o.type === 'boss' || o.type === 'priest') continue;
+    const dx = o.x - x, dy = o.y - y, d = Math.hypot(dx, dy) || 1;
+    if (d < R) { const f = force * (1 - d / R) + 120; o.kx = dx / d * f; o.ky = dy / d * f; }
+  }
+}
+function applyKnock(o, dt) {
+  if (!o.kx && !o.ky) return;
+  o.x += o.kx * dt; o.y += o.ky * dt;
+  const k = Math.max(0, 1 - dt * 6); o.kx *= k; o.ky *= k;
+  if (Math.abs(o.kx) + Math.abs(o.ky) < 8) o.kx = o.ky = 0;
+}
+
+// ───────── 生成 ─────────
+function farPoint(minD, margin) {
+  for (let i = 0; i < 40; i++) {
+    const x = rand(margin, W - margin), y = rand(margin, H - margin);
+    if (Math.hypot(x - P.x, y - P.y) >= minD) return { x, y };
+  }
+  return { x: W - P.x, y: H - P.y };
+}
+// 从某一边进场、横穿场地的起点和方向
+function edgeEntry(aimX, aimY, spread, side = Math.floor(Math.random() * 4)) {
+  const x = side === 0 ? -20 : side === 1 ? W + 20 : rand(40, W - 40);
+  const y = side === 2 ? -20 : side === 3 ? H + 20 : rand(40, H - 40);
+  const tx = aimX + rand(-spread, spread), ty = aimY + rand(-spread, spread), d = Math.hypot(tx - x, ty - y) || 1;
+  return { x, y, dx: (tx - x) / d, dy: (ty - y) / d };
+}
+const count = type => enemies.filter(e => e.type === type).length + warns.filter(w => w.type === type).length;
+// 敌人血量：随难度等级上涨，再乘上压力系数（打得越猛，新刷的火越厚）
+// 每局都从零技能开始，所以章节对血量的影响比对数量小，免得开局打不动
+const hpMul = () => { const L = G.round - 1 + 2.2 * (G.ch - 1); return (1 + .22 * L + .02 * L * L) * (1 + .4 * (G.dir - 1)); };
+// 火灵同屏上限与每秒刷新数：第 1 关松，第 2 关骤然涌来，之后逐关加量
+function emberCap() {
+  const r = G.round, t = G.t;
+  if (G.boss) return 40 + 10 * G.boss.lv + 10 * (G.ch - 1);
+  if (r === 1) return (t < 8 ? 18 : 40) * chMul();
+  if (r === 2) return (t < 6 ? 60 : t < 14 ? 100 : 150) * chMul();
+  return Math.min(320, (130 + 25 * dl()) * (1 + .15 * (G.ch - 1)));
+}
+function emberRate() {
+  const r = G.round, t = G.t;
+  // Boss 拖太久会狂暴，小火刷新翻倍
+  if (G.boss) return (2.5 + .5 * G.boss.lv + .5 * (G.ch - 1)) * (t > 50 ? 2 : 1);
+  if (r === 1) return (1.5 + t * .12) * chMul() * G.dir;
+  if (r === 2) return (4 + t * .3) * chMul() * G.dir;
+  return Math.min(30, (6 + 1.3 * dl()) * (1 + .15 * (G.ch - 1))) * (.6 + .4 * Math.min(1, t / (G.len * .5))) * G.dir;
+}
+const units = () => enemies.length + warns.filter(w => w.kind === 'unit').length;
+// 火灵从场外三五成群涌进来
+function spawnEmbers(n) {
+  const side = Math.floor(Math.random() * 4);
+  const bx = side === 0 ? -24 : side === 1 ? W + 24 : rand(0, W), by = side === 2 ? -24 : side === 3 ? H + 24 : rand(0, H);
+  for (let i = 0; i < n; i++) materialize({ type: 'ember', x: bx + rand(-30, 30), y: by + rand(-30, 30) });
+}
+// 包围圈：一整圈火灵在你周围亮起，0.9 秒后成形
+function spawnRing() {
+  const n = Math.min(40, 18 + 2 * dl()), R = 230;
+  for (let i = 0; i < n; i++) {
+    const a = i / n * TAU;
+    warns.push({ kind: 'unit', type: 'ember', x: clamp(P.x + Math.cos(a) * R, 10, W - 10), y: clamp(P.y + Math.sin(a) * R, 10, H - 10), t: .9, max: .9 });
+  }
+  G.banner = { title: '被包围了！', sub: touchMode ? '双击屏幕冲刺，撞出一条路' : '空格冲刺撞出去，或者按 Q 用道具', t: 1.8, c: '#ff2e4a' };
+  sfx.alarm();
+}
+function spawnOne() {
+  const r = dl(), pool = [];
+  if (enemies.filter(e => e.type !== 'ember' && e.type !== 'boss').length >= 3 + r) return;
+  for (const t in ROSTER) {
+    const R = ROSTER[t];
+    if (!R.w || r < R.from || G.boss) continue;
+    if (count(t) >= R.cap(r)) continue;
+    pool.push([t, R.w]);
+  }
+  if (!pool.length) return;
+  let x = Math.random() * pool.reduce((s, p) => s + p[1], 0), type = pool[0][0];
+  for (const [t, w] of pool) { if ((x -= w) <= 0) { type = t; break; } }
+  if (type === 'comet') spawnComet();
+  else if (type === 'crawler') { const e = edgeEntry(W / 2, H / 2, Math.min(W, H) * .3); warns.push({ kind: 'unit', type, ...e, t: 1, max: 1 }); }
+  else if (type === 'priest') {
+    const a = Math.random() * TAU;
+    warns.push({ kind: 'unit', type, x: clamp(W / 2 + Math.cos(a) * W, 50, W - 50), y: clamp(H / 2 + Math.sin(a) * H, 50, H - 50), t: .8, max: .8 });
+  } else { const p = farPoint(200, 36); warns.push({ kind: 'unit', type, x: p.x, y: p.y, t: .8, max: .8 }); }
+}
+// 火梭不会连续两次从同一侧出现
+function spawnComet() {
+  let side; do side = Math.floor(Math.random() * 4); while (side === G.lastSide);
+  G.lastSide = side;
+  warns.push({ kind: 'unit', type: 'comet', ...edgeEntry(P.x, P.y, 110, side), t: .9, max: .9 });
+}
+function materialize(w) {
+  const R = ROSTER[w.type];
+  const e = { type: w.type, x: w.x, y: w.y, vx: 0, vy: 0, r: R.r, age: 0, near: 0, seed: Math.random() * 10, life: 99,
+    hp: R.hp * hpMul(), maxHp: R.hp * hpMul(), hitT: 0, orbT: 0, dashId: -1, xp: R.xp };
+  const spd = spdMul();
+  switch (w.type) {
+    case 'ember': case 'elite': break;
+    case 'comet': e.vx = w.dx * 480 * spd; e.vy = w.dy * 480 * spd; break;
+    case 'core': { const a = Math.random() * TAU; Object.assign(e, { life: rand(10, 14), vx: Math.cos(a) * 25, vy: Math.sin(a) * 25, fireT: rand(1.2, 2.2), rot: 0 }); break; }
+    case 'lobber': Object.assign(e, { life: rand(12, 15), throwT: 1.5 }); break;
+    case 'crawler': Object.assign(e, { vx: w.dx * 55 * spd, vy: w.dy * 55 * spd, trail: 0 }); break;
+    case 'cracker': Object.assign(e, { life: 20, phase: 'chase', pt: 0, gapA: 0 }); break;
+    case 'priest': {
+      const a0 = Math.atan2(H / 2 - w.y, W / 2 - w.x);
+      Object.assign(e, { life: 1.2 + 6 + .6, phase: 'warn', pt: 1.2, ang: a0 - .5, spin: Math.random() < .5 ? -.7 : .7, emitT: 0 });
+      break;
+    }
+  }
+  enemies.push(e);
+}
+function spdMul() { return Math.min(1.35, 1 + .025 * (dl() - 1)) * (1 + G.S.enemySpd); }
+function spark(x, y, a, sp, r = 5, big = false, boss = false) {
+  if (sparks.length < 300) sparks.push({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, r, grazed: false, big, boss });
+}
+function ring(x, y, n, sp, off, gapA, gapW, boss = false) {
+  for (let j = 0; j < n; j++) {
+    const a = off + j / n * TAU;
+    if (gapA != null && angDiff(a, gapA) < gapW) continue;
+    spark(x, y, a, sp, 5, false, boss);
+  }
+}
+function meteor(tx, ty, delay) {
+  shells.push({ kind: 'meteor', x: clamp(tx, 30, W - 30), y: clamp(ty, 30, H - 30), r: 42, t: 1.15, max: 1.15, delay, sounded: false });
+}
+function rollItemKind() {
+  const keysOk = Object.keys(ITEMS).filter(k => k !== 'drop' || P.hp < P.maxHp);
+  let x = Math.random() * keysOk.reduce((s, k) => s + ITEMS[k].w, 0), kind = keysOk[0];
+  for (const k of keysOk) { if ((x -= ITEMS[k].w) <= 0) { kind = k; break; } }
+  return kind;
+}
+function spawnItem() {
+  const kind = rollItemKind();
+  // 70% 生成在危险处：敌人身边或信标旁，带金边并延长效果 25%
+  const anchors = enemies.filter(e => e.type !== 'boss').concat(G.beacon ? [G.beacon] : []);
+  let pos = null, risky = false;
+  if (anchors.length && Math.random() < .7) {
+    for (let i = 0; i < 10 && !pos; i++) {
+      const a = anchors[Math.floor(Math.random() * anchors.length)], ang = Math.random() * TAU, d = (a.r || 20) + rand(45, 75);
+      const p = { x: clamp(a.x + Math.cos(ang) * d, 30, W - 30), y: clamp(a.y + Math.sin(ang) * d, 30, H - 30) };
+      if (!grounds.some(g => g.delay <= 0 && Math.hypot(g.x - p.x, g.y - p.y) < g.r + 10)) { pos = p; risky = true; }
+    }
+  }
+  if (!pos) pos = farPoint(140, 50);
+  items.push({ kind, x: pos.x, y: pos.y, life: 5, risky, bob: Math.random() * 6 });
+}
+function pickItem(it) {
+  const I = ITEMS[it.kind], dur = I.dur * (it.risky ? 1.25 : 1);
+  sfx.item(); burst(it.x, it.y, 18, COL.player, 200, .5, 2.5); flash(.15, COL.player);
+  floatText(it.x, it.y - 20, I.name, '#bff6ff', 16);
+  if (it.kind === 'frost') { if (!P.shield) { P.shield = true; P.shieldT = 0; } else P.dashCdT = 0; }
+  else if (it.kind === 'drop') P.hp = Math.min(P.maxHp, P.hp + 1);
+  else if (it.kind === 'bubble') { push(P.x, P.y, 150, 450); for (const e of enemies) if (Math.hypot(e.x - P.x, e.y - P.y) < 150 + e.r) dmgE(e, G.S.dmg * 4); novas.push({ x: P.x, y: P.y, r: 150, t: .35, max: .35, c: '#bff3ff' }); }
+  else if (it.kind === 'magnet') vacuum();
+  else P.buffs[it.kind] = dur;
+}
+const buff = k => (P.buffs[k] || 0) > 0;
+// 减速：慢燃沙漏（身边）、霜环余波（身边）、寒霜时钟（全场），取最强的一个
+function slowAt(x, y) {
+  let f = 1;
+  const d = Math.hypot(x - P.x, y - P.y);
+  if (buff('hourglass') && d < 180) f = .7;
+  if (buff('shockSlow') && d < 260) f = Math.min(f, .6);
+  if (buff('clock')) f = Math.min(f, .45);
+  return f;
+}
+const pRadius = () => P.r * (buff('step') ? .8 : 1);
+
+// ───────── 背包道具 ─────────
+function useSlot(i) {
+  const slot = G.inv[i];
+  if (!slot || G.state !== 'play') return;
+  const k = slot.k;
+  if (k === 'zero' && G.zeroUsed) { floatText(P.x, P.y - 30, '本关已经用过了', '#ff9a7a', 13); return; }
+  slot.n--; if (slot.n <= 0) G.inv.splice(i, 1);
+  floatText(P.x, P.y - 30, CONS[k].name, '#bff6ff', 15);
+  switch (k) {
+    case 'shock':
+      for (const e of enemies) if (Math.hypot(e.x - P.x, e.y - P.y) < 260 + e.r) dmgE(e, G.S.dmg * 6 + 8);
+      push(P.x, P.y, 260, 700); P.buffs.shockSlow = 2;
+      sfx.shock(); shake(6); flash(.25, COL.player); burst(P.x, P.y, 40, '#dffaff', 420, .5, 3);
+      G.shockRing = { x: P.x, y: P.y, t: .4 };
+      break;
+    case 'zero':
+      for (const e of enemies) {
+        if (e.type === 'boss') { cool(G.boss.max * .2); continue; }
+        burst(e.x, e.y, 6, '#bff6ff', 200, .6, 3); e.hp = 0; kill(e);
+      }
+      enemies = enemies.filter(e => !e.dead);
+      sparks = []; shells = []; grounds = []; warns = []; G.beam = null;
+      G.zeroUsed = true;
+      sfx.zero(); buzz(80, true); shake(12); flash(.9, '#e8fbff');
+      break;
+    case 'mirror': P.buffs.mirror = 3; sfx.item(); break;
+    case 'step': P.buffs.step = 5; sfx.dash(); break;
+    case 'clock': P.buffs.clock = 4; sfx.whistle(); flash(.2, COL.player); break;
+    case 'decoy': G.decoy = { x: P.x, y: P.y, t: 5 }; sfx.item(); break;
+  }
+}
+
+// ───────── Boss ─────────
+function startBoss() {
+  const idx = G.ch, kind = ['furnace', 'wheel', 'eye'][(idx - 1) % 3], lv = Math.floor((idx - 1) / 3), B = BOSSES[kind];
+  const max = B.heat * (1 + .22 * lv) * (1 + .9 * (G.ch - 1));
+  const e = { type: 'boss', kind, x: W / 2, y: kind === 'eye' ? H * .27 : H / 2, vx: 0, vy: 0, r: B.r, age: 0, grazed: false, near: 0,
+    seed: 3, life: 9999, spawnT: 1.6, off: true, st: 'idle', stT: 0, cd: 1.5, ang: 0, phase: 1 };
+  if (kind === 'wheel') {
+    e.spin = 1; e.revT = 6; e.charges = 0; e.exposed = 0; e.charge = null; e.next = 0;
+    e.pts = [];
+    for (let a = 0; a < 3; a++) for (let i = 0; i < 8; i++) e.pts.push({ a, i, r: i < 7 ? 7 : 14, x: e.x, y: e.y, grazed: false, boss: true, off: true });
+  }
+  G.boss = { kind, name: B.name, heat: max, max, lv, unit: e, cooled: false, idx };
+  enemies.push(e);
+  P.x = W / 2; P.y = H * .82; P.vx = P.vy = 0; P.trail = [];
+  G.banner = { title: `BOSS · ${B.name}`, sub: '本章最终战：把它的热量打到 0', t: 3.5, c: '#ff2e4a' };
+  sfx.alarm();
+}
+function cool(v) {
+  if (!G.boss || G.boss.cooled || G.boss.unit.off) return;
+  G.boss.heat = Math.max(0, G.boss.heat - v);
+}
+const bossScale = () => ({ sp: (1 + .07 * G.boss.lv) * Math.min(1.35, 1 + .025 * (dl() - 1)), iv: Math.max(.75, 1 - .05 * G.boss.lv) });
+function updateBoss(e, dt) {
+  if (e.spawnT > 0) { e.spawnT -= dt; e.off = e.spawnT > 0; return; }
+  const B = G.boss, p = B.heat / B.max, { sp, iv } = bossScale();
+  const ph = B.kind === 'eye' ? (p > .65 ? 1 : p > .35 ? 2 : 3) : (p > .65 ? 1 : p > .3 ? 2 : 3);
+  if (ph !== e.phase) { e.phase = ph; e.st = 'idle'; e.cd = 1; G.beam = null; floatText(e.x, e.y - e.r - 20, `第 ${ph} 阶段`, '#ffd24a', 18); sfx.alarm(); }
+  e.t = (e.t || 0) + dt;
+  if (B.kind === 'furnace') furnace(e, dt, ph, sp, iv);
+  else if (B.kind === 'wheel') wheel(e, dt, ph, sp, iv);
+  else eyeBoss(e, dt, ph, sp, iv);
+}
+// 熔炉暴君：① 炉门扇形喷发 → ② 左右活塞火墙 → ③ 失控追击 + 缺口火环
+function furnace(e, dt, ph, sp, iv) {
+  if (ph === 1) {
+    if (e.st === 'idle') { if ((e.cd -= dt) <= 0) { e.st = 'aim'; e.stT = .8; e.aim = Math.atan2(P.y - e.y, P.x - e.x); } }
+    else if (e.st === 'aim') { if ((e.stT -= dt) <= 0) { e.st = 'spray'; e.stT = .5; e.emit = 0; sfx.boom(); } }
+    else if (e.st === 'spray') {
+      if ((e.emit -= dt) <= 0) { e.emit = .07; for (let k = -2; k <= 2; k++) spark(e.x, e.y, e.aim + k * .25, 220 * sp, 5, false, true); }
+      if ((e.stT -= dt) <= 0) { e.st = 'idle'; e.cd = Math.max(.6, 3 * iv - 1.3); }
+    }
+  } else if (ph === 2) {
+    if ((e.cd -= dt) <= 0) {
+      e.cd = 2.6 * iv; e.side = e.side === 0 ? 1 : 0;
+      let g; do g = rand(40, H - 130); while (e.lastGap != null && Math.abs(g - e.lastGap) < 120);
+      e.lastGap = g;
+      warns.push({ kind: 'wall', side: e.side, gaps: [g], gw: 90, t: 1, max: 1, sp: 130 * sp, boss: true }); sfx.alarm();
+    }
+  } else {
+    const dx = P.x - e.x, dy = P.y - e.y, d = Math.hypot(dx, dy) || 1, s = 45 * sp;
+    e.x = clamp(e.x + dx / d * s * dt, e.r, W - e.r); e.y = clamp(e.y + dy / d * s * dt, e.r, H - e.r);
+    if ((e.cd -= dt) <= 0) { e.cd = 1.4 * iv; ring(e.x, e.y, 14, 120 * sp, Math.random() * TAU, Math.random() * TAU, .5, true); sfx.pop(); }
+  }
+}
+// 三首日轮：① 三条旋转火臂（每 6 秒反转）→ ② 火球依次冲锋，留下火带；每冲三次核心裸露 4 秒
+function wheel(e, dt, ph, sp, iv) {
+  e.revT -= dt;
+  if (e.revT <= 0) { e.spin *= -1; e.revT = 6; }
+  e.ang += e.spin * .6 * sp * dt;
+  if (e.exposed > 0) e.exposed -= dt;
+  for (const pt of e.pts) {
+    const a = e.ang + pt.a * TAU / 3, rr = pt.i < 7 ? 50 + 26 * pt.i : 228;
+    pt.x = e.x + Math.cos(a) * rr; pt.y = e.y + Math.sin(a) * rr;
+    pt.off = pt.i === 7 && !!e.charge && e.charge.a === pt.a;
+  }
+  if (ph >= 2) {
+    const c = e.charge;
+    if (!c && (e.cd -= dt) <= 0) {
+      const a = e.next++ % 3, orb = e.pts.find(p => p.a === a && p.i === 7);
+      const dx = P.x - orb.x, dy = P.y - orb.y, d = Math.hypot(dx, dy) || 1;
+      e.charge = { a, st: 'warn', t: .9, x: orb.x, y: orb.y, dx: dx / d, dy: dy / d, r: 14, grazed: false, boss: true, trail: 0 };
+      e.cd = 2.2 * iv;
+    } else if (c) {
+      if (c.st === 'warn') { if ((c.t -= dt) <= 0) c.st = 'go'; }
+      else {
+        const s = 520 * sp * dt; c.x += c.dx * s; c.y += c.dy * s; c.trail += s;
+        if (c.trail > 22) { c.trail = 0; grounds.push({ x: c.x, y: c.y, r: 11, delay: 0, maxDelay: 0, life: 2, max: 2 }); }
+        if (c.x < -40 || c.x > W + 40 || c.y < -40 || c.y > H + 40) {
+          e.charge = null; e.charges++;
+          if (e.charges % 3 === 0) { e.exposed = 4; floatText(e.x, e.y - 40, '核心裸露！贴近降温', COL.player, 18); }
+        }
+      }
+    }
+  }
+}
+// 灾焰之眼：① 凝视光束 → ② 泪火雨 → ③ 闭眼螺旋风暴
+function eyeBoss(e, dt, ph, sp, iv) {
+  e.closed = false;
+  if (ph === 1) {
+    if (e.st === 'idle') { e.st = 'track'; e.stT = 1.2; }
+    if (e.st === 'track') { e.aim = Math.atan2(P.y - e.y, P.x - e.x); if ((e.stT -= dt) <= 0) { e.st = 'lock'; e.stT = .8; } }
+    else if (e.st === 'lock') { if ((e.stT -= dt) <= 0) { e.st = 'beam'; e.stT = 1.5; G.beam = { x: e.x, y: e.y, a: e.aim, w: 13, grazed: false }; sfx.boom(); shake(5); } }
+    else if (e.st === 'beam') {
+      if ((e.stT -= dt) <= 0) {
+        for (let d = 60; d < 1400; d += 40) {
+          const x = e.x + Math.cos(e.aim) * d, y = e.y + Math.sin(e.aim) * d;
+          if (x < 0 || x > W || y < 0 || y > H) break;
+          spark(x, y, Math.random() * TAU, 40 * sp, 5, false, true);
+        }
+        G.beam = null; e.st = 'rest'; e.stT = 1 * iv;
+      }
+    } else if (e.st === 'rest' && (e.stT -= dt) <= 0) e.st = 'idle';
+  } else if (ph === 2) {
+    e.aim = Math.atan2(P.y - e.y, P.x - e.x);
+    if ((e.cd -= dt) <= 0) {
+      e.cd = 1.6 * iv;
+      for (let j = 0; j < 5; j++) shells.push({ kind: 'tear', x: rand(30, W - 30), y: rand(H * .42, H - 30), sx: e.x, sy: e.y, r: 20, t: 1, max: 1, delay: j * .12, sp });
+    }
+  } else {
+    // 4.5 秒一循环：前 3 秒闭眼放螺旋，睁眼瞬间炸一圈带缺口的火环
+    const cyc = e.t % 4.5;
+    e.closed = cyc < 3;
+    if (e.closed) {
+      e.ang += 2.2 * dt;
+      if ((e.emit = (e.emit || 0) - dt) <= 0) { e.emit = .08; spark(e.x, e.y, e.ang, 130 * sp, 5, false, true); spark(e.x, e.y, e.ang + Math.PI, 130 * sp, 5, false, true); }
+      e.opened = false;
+    } else if (!e.opened) { e.opened = true; ring(e.x, e.y, 16, 140 * sp, Math.random() * TAU, Math.atan2(P.y - e.y, P.x - e.x) + Math.PI / 2, .5, true); sfx.pop(); }
+  }
+}
+function segDist(px, py, x, y, a) {
+  const dx = Math.cos(a), dy = Math.sin(a), t = Math.max(0, (px - x) * dx + (py - y) * dy);
+  return Math.hypot(px - (x + dx * t), py - (y + dy * t));
+}
+
+// ───────── 核心更新 ─────────
+function update(rdt) {
+  if (G.state === 'pause') return;
+  G.time += rdt;
+  if (G.slowCd > 0) G.slowCd -= rdt;
+  let dt = rdt;
+  if (G.slowT > 0) { G.slowT -= rdt; dt = rdt * .3; }
+  if (G.stopCd > 0) G.stopCd -= rdt;
+  if (G.stopT > 0) { G.stopT -= rdt; dt = rdt * .06; }
+  G.shake = Math.max(0, G.shake - rdt * 40);
+  G.flash = Math.max(0, G.flash - rdt * 3);
+  if (G.banner && (G.banner.t -= rdt) <= 0) G.banner = null;
+  if (G.shockRing && (G.shockRing.t -= rdt) <= 0) G.shockRing = null;
+  updateFx(dt);
+  if (G.state === 'collect') { updateCollect(dt); return; }
+  if (G.state !== 'play') { if (G.state === 'dead') G.deadT += rdt; return; }
+
+  const S = G.S, spd = spdMul(), pr = pRadius();
+  G.t += dt;
+  for (const k in P.buffs) P.buffs[k] -= dt;
+  // 玩家
+  const dir = inputDir();
+  if (dir.m) { P.dx = dir.x; P.dy = dir.y; }
+  P.still = !dir.m && P.dashT <= 0;
+  P.dashCdT -= dt * (buff('spikes') ? 1 / .75 : 1); P.inv -= dt; P.dashInv -= dt; P.afterT -= dt; P.hurtT -= dt;
+  if (dashQueued && P.dashCdT <= 0) {
+    P.dashT = DASH_T; P.dashInv = S.dashInv; P.dashCdT = DASH_CD * (1 - S.dashCdRed);
+    P.dashId++;
+    sfx.dash(); buzz(10); burst(P.x, P.y, 12, '#dffaff', 140, .4, 2);
+  }
+  dashQueued = false;
+  if (P.dashT > 0) { P.dashT -= dt; P.vx = P.dx * DASH_SPD; P.vy = P.dy * DASH_SPD; }
+  else {
+    const sp = S.speed * (1 + .05 * G.perm.speed) * (1 + S.moveAdd
+      + (buff('spikes') ? .18 : 0) + (buff('step') ? .35 : 0)) * dir.m;
+    if (dir.drag != null) {
+      // 拖动跟手：直接朝手指目标点走，越近越慢，到了就停，没有加速和惯性
+      const v = Math.min(sp * DRAG_CAP, dir.drag * 20);
+      P.vx = dir.x * v; P.vy = dir.y * v;
+    } else {
+      const k = Math.min(1, dt * 28);
+      P.vx += (dir.x * sp - P.vx) * k; P.vy += (dir.y * sp - P.vy) * k;
+    }
+  }
+  P.x = clamp(P.x + P.vx * dt, P.r, W - P.r); P.y = clamp(P.y + P.vy * dt, P.r, H - P.r);
+  if (joy && joy.drag) { if (P.dashT > 0) { joy.tx = P.x; joy.ty = P.y; } else clampDrag(); }
+  P.trail.push({ x: P.x, y: P.y, d: P.dashT > 0 }); if (P.trail.length > 18) P.trail.shift();
+  if (!P.shield) { P.shieldT -= dt; if (P.shieldT <= 0) { P.shield = true; sfx.shieldUp(); burst(P.x, P.y, 14, COL.player, 90, .4, 2); } }
+  if (G.combo && (G.comboT -= dt) <= 0) { G.combo = 0; G.milestone = 0; }
+  if (P.hp < P.maxHp && Math.random() < dt * (P.maxHp - P.hp) * 2) parts.push({ x: P.x + rand(-6, 6), y: P.y + 8, vx: 0, vy: 60, life: .5, max: .5, c: COL.player, s: 2.5 });
+  if (G.decoy && (G.decoy.t -= dt) <= 0) { push(G.decoy.x, G.decoy.y, 150, 500); burst(G.decoy.x, G.decoy.y, 30, '#dffaff', 300, .5, 3); sfx.pop(); G.decoy = null; }
+
+  // 生成：火灵按波次涌入，其余敌人按权重零星出现
+  if (G.t > 5 && !G.boss) G.dir = clamp(G.dir + dt * (count('ember') < emberCap() * .35 ? .04 : -.06), 1, 2.5);
+  G.spawnAcc += emberRate() * dt;
+  while (G.spawnAcc >= 1) {
+    const room = emberCap() - count('ember');
+    if (room <= 0) { G.spawnAcc = Math.min(G.spawnAcc, 3); break; }
+    const n = Math.min(room, Math.floor(G.spawnAcc), 2 + Math.floor(Math.random() * 4));
+    G.spawnAcc -= n; spawnEmbers(n);
+  }
+  if (!G.boss && G.round >= 2 && (G.ringT -= dt) <= 0) { G.ringT = G.round === 2 ? 9 : Math.max(7, 12 - .4 * dl()); spawnRing(); }
+  G.specAcc = (G.specAcc || 0) + (.3 + .06 * dl()) * dt;
+  if (G.specAcc >= 1) { G.specAcc--; spawnOne(); }
+  if (G.round === 2 && G.t >= 6 && (G.cometT -= dt) <= 0) { G.cometT = G.t < 12 ? 3 : 2.5; spawnComet(); }
+  if (dl() >= 7 && !G.boss && (G.meteorT -= dt) <= 0) {
+    G.meteorT = 6;
+    meteor(P.x + rand(-40, 40), P.y + rand(-40, 40), 0);
+    if (dl() >= 11) meteor(P.x + rand(-120, 120), P.y + rand(-120, 120), .45);
+  }
+  for (let i = warns.length - 1; i >= 0; i--) {
+    const w = warns[i];
+    if ((w.t -= dt) <= 0) { warns.splice(i, 1); w.kind === 'wall' ? fireWall(w) : materialize(w); }
+  }
+  // 场上道具
+  while (G.itemTimes.length && G.t >= G.itemTimes[0]) { G.itemTimes.shift(); spawnItem(); }
+  const pickR = P.r + 16 * (1 + .2 * G.perm.pickup);
+  for (let i = items.length - 1; i >= 0; i--) {
+    const it = items[i];
+    if (Math.hypot(it.x - P.x, it.y - P.y) < pickR) { items.splice(i, 1); pickItem(it); continue; }
+    if ((it.life -= dt) <= 0) items.splice(i, 1);
+  }
+
+  updateEnemies(dt, spd);
+  buildGrid(); separate();
+  for (let i = sparks.length - 1; i >= 0; i--) {
+    const b = sparks[i], s = slowAt(b.x, b.y); b.x += b.vx * dt * s; b.y += b.vy * dt * s; applyKnock(b, dt);
+    if (b.x < -30 || b.x > W + 30 || b.y < -30 || b.y > H + 30) sparks.splice(i, 1);
+  }
+  for (let i = shells.length - 1; i >= 0; i--) {
+    const s = shells[i]; if (!s) continue;
+    if (s.delay > 0) { s.delay -= dt; continue; }
+    if (s.kind === 'meteor' && !s.sounded) { s.sounded = true; sfx.whistle(); }
+    if ((s.t -= dt) <= 0) { shells.splice(i, 1); land(s); if (G.state !== 'play') return; }
+  }
+  for (let i = grounds.length - 1; i >= 0; i--) {
+    const g = grounds[i];
+    if (g.delay > 0) g.delay -= dt; else if ((g.life -= dt) <= 0) grounds.splice(i, 1);
+  }
+
+  // 攻击：自动冰锥、环绕冰晶、霜爆、冰链、碎冰连爆、冲刺撞击
+  combat(dt);
+  enemies = enemies.filter(e => !e.dead);
+  updateGems(dt);
+
+  // 碰撞：碰到火就受伤
+  const check = o => !o.off && Math.hypot(o.x - P.x, o.y - P.y) < (o.r + pr) * .75 && (hit(true), true);
+  for (const e of enemies) { check(e); if (G.state !== 'play') return; }
+  // 自动道具和复苏可能在循环中途清空火星，所以每次都要确认这一颗还在
+  for (let i = sparks.length - 1; i >= 0; i--) { if (sparks[i] && check(sparks[i])) sparks.splice(i, 1); if (G.state !== 'play') return; }
+  const bu = G.boss && G.boss.unit;
+  if (bu && bu.pts && !bu.off) {
+    for (const pt of bu.pts) { check(pt); if (G.state !== 'play') return; }
+    if (bu.charge && bu.charge.st === 'go') { check(bu.charge); if (G.state !== 'play') return; }
+  }
+  if (G.beam && segDist(P.x, P.y, G.beam.x, G.beam.y, G.beam.a) < G.beam.w * .8 + pr * .5) { hit(false); if (G.state !== 'play') return; }
+  for (const g of grounds) {
+    if (g.delay > 0) continue;
+    if (Math.hypot(g.x - P.x, g.y - P.y) < g.r * .8 + pr * .3) { hit(false); if (G.state !== 'play') return; }
+  }
+  if (!touchMode && !G.hintShown && G.inv.length && enemies.filter(e => Math.hypot(e.x - P.x, e.y - P.y) < 110).length >= 10) {
+    G.hintShown = true;
+    G.banner = { title: touchMode ? '太多了！点右下的道具按钮' : `太多了！按 ${SLOT_KEYS[0]} 使用${CONS[G.inv[0].k].name}`, sub: '道具在商店购买，带进关卡里使用', t: 2.5, c: COL.player };
+  }
+  if (G.boss && G.boss.heat <= 0 && !G.boss.cooled) {
+    G.boss.cooled = true; G.bossCooled++;
+    sfx.bossDown(); buzz([40, 40, 90], true); flash(.8, '#e8fbff'); shake(10); burst(bu.x, bu.y, 80, '#dffaff', 420, 1, 4);
+    dropGem(bu.x, bu.y, 40);
+    endRound();
+  } else if (G.t >= G.len && !G.boss) endRound();
+}
+
+// ───────── 攻击系统 ─────────
+// 空间网格：几百只火灵的碰撞、索敌和互相挤开都只看附近格子
+const GRID = 48, grid = new Map();
+const gkey = (cx, cy) => (cx + 50) * 8192 + cy + 50;
+function buildGrid() {
+  grid.clear();
+  for (const e of enemies) {
+    if (e.type === 'boss' || e.dead) continue;
+    const k = gkey(Math.floor(e.x / GRID), Math.floor(e.y / GRID));
+    let c = grid.get(k); if (!c) grid.set(k, c = []); c.push(e);
+  }
+}
+function near(x, y, r, cb) {
+  const x0 = Math.floor((x - r - 20) / GRID), x1 = Math.floor((x + r + 20) / GRID), y0 = Math.floor((y - r - 20) / GRID), y1 = Math.floor((y + r + 20) / GRID);
+  for (let cx = x0; cx <= x1; cx++) for (let cy = y0; cy <= y1; cy++) {
+    const c = grid.get(gkey(cx, cy)); if (!c) continue;
+    for (const e of c) if (!e.dead && Math.hypot(e.x - x, e.y - y) < r + e.r) cb(e);
+  }
+}
+// 火灵互相挤开，不会叠成一坨
+function separate() {
+  for (const c of grid.values()) {
+    for (const e of c) {
+      if (e.type !== 'ember' && e.type !== 'elite') continue;
+      near(e.x, e.y, e.r, o => {
+        if (o === e || (o.type !== 'ember' && o.type !== 'elite')) return;
+        const dx = e.x - o.x, dy = e.y - o.y, d = Math.hypot(dx, dy) || .01, ov = e.r + o.r - d;
+        if (ov > 0) { const k = ov * .25 / d; e.x += dx * k; e.y += dy * k; o.x -= dx * k; o.y -= dy * k; }
+      });
+    }
+  }
+}
+function nearestEnemy(x, y, maxR, skip) {
+  let best = null, bd = maxR;
+  for (const e of enemies) {
+    if (e.dead || e.off || (skip && skip.has(e)) || e.x < -5 || e.x > W + 5 || e.y < -5 || e.y > H + 5) continue;
+    const d = Math.hypot(e.x - x, e.y - y) - e.r;
+    if (d < bd) { bd = d; best = e; }
+  }
+  return best;
+}
+function dmgE(e, d, kx, ky) {
+  if (e.dead || e.off) return;
+  e.hitT = .08;
+  if (e.type === 'boss') { cool(d); return; }
+  e.hp -= d;
+  if ((kx || ky) && e.type !== 'priest') { const m = Math.hypot(kx, ky) || 1, f = e.type === 'ember' ? 110 : 40; e.kx = (e.kx || 0) + kx / m * f; e.ky = (e.ky || 0) + ky / m * f; }
+  if (e.hp <= 0) kill(e);
+}
+const MILESTONES = [50, 100, 200, 400, 800, 1500];
+function kill(e) {
+  e.dead = true; G.kills++; G.roundKills++;
+  if (G.devil.reap && ++G.reapN >= Math.ceil(100 / G.devil.reap)) { G.reapN = 0; if (P.hp < P.maxHp) { P.hp++; floatText(P.x, P.y - 30, '寒魂收割 +1', '#ff9bf0', 15); sfx.shieldUp(); } }
+  G.combo++; G.comboT = 1.6; G.maxCombo = Math.max(G.maxCombo, G.combo);
+  dropGem(e.x, e.y, e.xp);
+  G.coinAcc += e.type === 'ember' ? .2 : e.xp * .5;
+  const big = e.type !== 'ember';
+  burst(e.x, e.y, big ? 24 : 6 + Math.min(6, G.combo / 25 | 0), big ? COL[e.type] : (Math.random() < .5 ? '#ff9a3d' : '#dffaff'), big ? 280 : 170, .38, big ? 3.4 : 2.6);
+  if (!lowq() && novas.length < 30) novas.push({ x: e.x, y: e.y, r: big ? e.r * 3 : e.r * 1.7, t: .16, max: .16, c: big ? '#fff1e6' : '#ffd0a0' });
+  if (G.time - G.killSfx > .045) { G.killSfx = G.time; sfx.kill(G.combo); }
+  if (big) { shake(5); sfx.pop(); hitStop(.055, .3); buzz(15); }
+  if (e.type === 'elite') items.push({ kind: rollItemKind(), x: e.x, y: e.y, life: 8, risky: true, bob: Math.random() * 6 });
+  if (G.S.shatter && booms.length < 60 && Math.random() < G.S.shatter) booms.push({ x: e.x, y: e.y, t: .08, r: 48 * (G.S.boomR || 1), d: G.S.dmg * 1.6 });
+  const m = MILESTONES[G.milestone];
+  if (m && G.combo >= m) {
+    G.milestone++;
+    floatText(P.x, P.y - 40, `连杀 ${m}！`, '#ffd24a', 26); flash(.25, '#ffd24a'); sfx.beaconOn(); shake(6); hitStop(.09, .3); buzz(25);
+  }
+}
+function dropGem(x, y, v) {
+  if (gems.length > 360) { gems[Math.floor(Math.random() * gems.length)].v += v; return; }
+  gems.push({ x: clamp(x, 6, W - 6), y: clamp(y, 6, H - 6), v, vx: rand(-50, 50), vy: rand(-50, 50), pull: false });
+}
+// k：0 主冰锥，1 斜向和背后，2 冰灵，3 弹射过，4 墙壁反弹过
+function newBolt(x, y, a, d, k = 0) {
+  const S = G.S;
+  return { x, y, vx: Math.cos(a) * 640, vy: Math.sin(a) * 640, d, pierce: S.pierce, ric: S.ric, bounce: S.bounce, life: S.bounce ? 1.3 : .85, hit: [], hitSet: null, k };
+}
+// 一轮齐射：扇形分裂 × 并排齐射，再加斜向、背后和左右
+function volley(x, y, a0, d) {
+  if (bolts.length > 300) return;
+  const S = G.S, n = S.shots, spread = Math.min(.16, 1.1 / n), nx = -Math.sin(a0), ny = Math.cos(a0);
+  for (let k = 0; k < n; k++) {
+    const a = a0 + (k - (n - 1) / 2) * spread;
+    for (let f = 0; f <= S.front; f++) { const off = (f - S.front / 2) * 9; bolts.push(newBolt(x + nx * off, y + ny * off, a, d)); }
+  }
+  for (const da of S.diag) { bolts.push(newBolt(x, y, a0 + da, d, 1)); bolts.push(newBolt(x, y, a0 - da, d, 1)); }
+  if (S.back >= 1) bolts.push(newBolt(x, y, a0 + Math.PI, d * S.backMul, 1));
+  if (S.back >= 2) { bolts.push(newBolt(x, y, a0 + Math.PI / 2, d * S.backMul, 1)); bolts.push(newBolt(x, y, a0 - Math.PI / 2, d * S.backMul, 1)); }
+}
+// 冰锥命中：暴击跳黄色大数字，冰封概率冻住
+function boltHit(b, e) {
+  const S = G.S, crit = Math.random() < S.crit, d = b.d * (crit ? S.critMul : 1);
+  if (crit) {
+    if (floats.length < 40 && (e.type !== 'ember' || floats.filter(f => f.crit).length < 5)) { floatText(e.x + rand(-6, 6), e.y - e.r - 4, Math.round(d * 10) + '!', '#ffd24a', 15 + Math.min(10, d)); floats[floats.length - 1].crit = true; }
+    burst(e.x, e.y, 3, '#ffd24a', 150, .22, 2.2);
+    if (G.time - (G.critSfx || 0) > .08) { G.critSfx = G.time; sfx.crit(); }
+    if (e.type !== 'ember') { hitStop(.03, e.type === 'boss' ? .6 : .3); buzz(8); }
+  }
+  if (S.freeze && e.type !== 'boss' && Math.random() < S.freeze) { if (!(e.frozen > 0)) burst(e.x, e.y, 5, '#dffaff', 90, .3, 2); e.frozen = 1.6; }
+  dmgE(e, d, b.vx, b.vy);
+}
+function combat(dt) {
+  const S = G.S, bu = G.boss && G.boss.unit && !G.boss.unit.off ? G.boss.unit : null;
+  for (const e of enemies) { e.hitT -= dt; e.orbT -= dt; }
+  // 冰锥：自动瞄准最近的敌人。站着不动时火力翻倍（手指按住不滑也算）
+  if ((G.fireT -= dt) <= 0) {
+    // Boss 关：身边 140 内没有小怪时，冰锥优先打 Boss
+    let t = nearestEnemy(P.x, P.y, 520);
+    if (bu && (!t || t === bu || Math.hypot(t.x - P.x, t.y - P.y) - t.r > 140)) t = bu;
+    if (t) {
+      G.fireT = S.fireIv * (buff('prism') ? .5 : 1) * (P.still ? .5 : 1);
+      const a0 = Math.atan2(t.y - P.y, t.x - P.x);
+      volley(P.x, P.y, a0, S.dmg);
+      if (G.devil.echo) { G.echoT = .09; G.echoA = a0; }
+      if (G.evo.storm && ++G.volN % 8 === 0 && bolts.length < 340) {
+        for (let k = 0; k < 24; k++) bolts.push(newBolt(P.x, P.y, a0 + k / 24 * TAU, S.dmg, 3));
+        novas.push({ x: P.x, y: P.y, r: 70, t: .2, max: .2, c: '#ffd24a' }); shake(2);
+      }
+      sfx.shoot();
+    } else G.fireT = 0;
+  }
+  if (G.echoT > 0 && (G.echoT -= dt) <= 0) volley(P.x, P.y, G.echoA, S.dmg);
+  // 冰灵伙伴：跟在身后，各自索敌射击
+  for (let k = 0; k < S.pets; k++) {
+    const pt = G.pets[k] || (G.pets[k] = { x: P.x, y: P.y, t: k * .25 });
+    const a = G.time * 1.6 + k / S.pets * TAU, hx = P.x + Math.cos(a) * 34, hy = P.y - 22 + Math.sin(a) * 10;
+    pt.x += (hx - pt.x) * Math.min(1, dt * 8); pt.y += (hy - pt.y) * Math.min(1, dt * 8);
+    if ((pt.t -= dt) <= 0) {
+      const e = nearestEnemy(pt.x, pt.y, 420) || bu;
+      if (e) {
+        pt.t = G.evo.legion ? .35 : .7;
+        const a1 = Math.atan2(e.y - pt.y, e.x - pt.x), nx = -Math.sin(a1), ny = Math.cos(a1);
+        if (bolts.length < 340) for (let f = G.evo.legion ? -1 : 0; f <= (G.evo.legion ? 1 : 0); f++) bolts.push(newBolt(pt.x + nx * f * 8, pt.y + ny * f * 8, a1, S.dmg * .6, 2));
+      }
+      else pt.t = .1;
+    }
+  }
+  for (let i = bolts.length - 1; i >= 0; i--) {
+    const b = bolts[i];
+    // 追踪：冰锥慢慢拐向最近的敌人
+    if (S.homing) {
+      if ((b.tgtT = (b.tgtT || 0) - dt) <= 0 || (b.tgt && b.tgt.dead)) { b.tgtT = .15; b.tgt = nearestEnemy(b.x, b.y, 220, b.hitSet); }
+      const e = b.tgt;
+      if (e && !e.dead) {
+        const want = Math.atan2(e.y - b.y, e.x - b.x), cur = Math.atan2(b.vy, b.vx);
+        let d = Math.atan2(Math.sin(want - cur), Math.cos(want - cur)); d = clamp(d, -7 * dt, 7 * dt);
+        const sp = Math.hypot(b.vx, b.vy); b.vx = Math.cos(cur + d) * sp; b.vy = Math.sin(cur + d) * sp;
+      }
+    }
+    b.x += b.vx * dt; b.y += b.vy * dt; b.life -= dt;
+    // 墙壁反弹
+    if (b.bounce > 0 && (b.x < 0 || b.x > W || b.y < 0 || b.y > H)) {
+      if (b.x < 0 || b.x > W) b.vx *= -1; if (b.y < 0 || b.y > H) b.vy *= -1;
+      b.x = clamp(b.x, 0, W); b.y = clamp(b.y, 0, H); b.bounce--; b.k = 4; b.life = Math.max(b.life, .6); b.hitSet = null; b.hit = [];
+    }
+    let gone = b.life <= 0 || b.x < -20 || b.x > W + 20 || b.y < -20 || b.y > H + 20;
+    if (!gone && bu && Math.hypot(bu.x - b.x, bu.y - b.y) < bu.r + 5) { boltHit(b, bu); burst(b.x, b.y, 3, '#dffaff', 120, .25, 2); gone = true; }
+    if (!gone) near(b.x, b.y, 5, e => {
+      if (gone || b.hit.includes(e)) return;
+      b.hit.push(e); (b.hitSet || (b.hitSet = new Set())).add(e);
+      boltHit(b, e);
+      if (b.pierce > 0) { b.pierce--; return; }
+      // 弹射：打中后跳向附近另一个敌人
+      if (b.ric > 0) {
+        const n = nearestEnemy(e.x, e.y, 180, b.hitSet);
+        if (n) { if (G.evo.blast && booms.length < 60) booms.push({ x: e.x, y: e.y, t: .02, r: 56 * (S.boomR || 1), d: S.dmg * 1.8 }); b.ric--; b.k = 3; const a = Math.atan2(n.y - b.y, n.x - b.x), sp = Math.hypot(b.vx, b.vy); b.vx = Math.cos(a) * sp; b.vy = Math.sin(a) * sp; b.life = Math.max(b.life, .5); return; }
+      }
+      gone = true;
+    });
+    if (gone) bolts.splice(i, 1);
+  }
+  // 环绕冰晶
+  if (S.orbit) {
+    G.orbA += dt * 3.4;
+    for (let k = 0; k < S.orbit; k++) {
+      const a = G.orbA + k / S.orbit * TAU, x = P.x + Math.cos(a) * 64, y = P.y + Math.sin(a) * 64;
+      near(x, y, 10, e => { if (e.orbT <= 0) { e.orbT = .3; if (G.evo.frost) e.frozen = 1.6; dmgE(e, S.dmg * (G.evo.frost ? 1.95 : 1.3), e.x - P.x, e.y - P.y); } });
+      if (bu && !(bu.orbT > 0) && Math.hypot(bu.x - x, bu.y - y) < bu.r + 10) { bu.orbT = .3; dmgE(bu, S.dmg * 1.3); }
+    }
+  }
+  // 霜爆
+  if (S.novaIv && (G.novaT -= dt) <= 0) {
+    G.novaT = S.novaIv;
+    const nd = S.dmg * 2.5 * (G.evo.zero ? S.critMul : 1);
+    novas.push({ x: P.x, y: P.y, r: S.novaR, t: .35, max: .35, c: G.evo.zero ? '#ffd24a' : '#bff3ff' });
+    near(P.x, P.y, S.novaR, e => { if (G.evo.zero) e.frozen = 1.6; dmgE(e, nd, e.x - P.x, e.y - P.y); });
+    if (bu && Math.hypot(bu.x - P.x, bu.y - P.y) < S.novaR + bu.r) dmgE(bu, nd);
+    sfx.nova();
+  }
+  // 冰链闪电：从最近的敌人开始，连跳附近的下一个
+  if (S.chain && (G.chainT -= dt) <= 0) {
+    let cur = nearestEnemy(P.x, P.y, 300);
+    if (!cur) G.chainT = .2;
+    else {
+      G.chainT = G.evo.thunder ? .5 : 1.2;
+      const pts = [{ x: P.x, y: P.y }], seen = new Set();
+      for (let k = 0; k < S.chain && cur; k++) {
+        pts.push({ x: cur.x, y: cur.y }); seen.add(cur); dmgE(cur, S.dmg * 2.2);
+        cur = nearestEnemy(cur.x, cur.y, 150, seen);
+      }
+      zaps.push({ pts, t: .2 });
+      sfx.zap();
+    }
+  }
+  // 碎冰连爆：打碎的敌人炸开，可能连锁
+  for (let i = booms.length - 1; i >= 0; i--) {
+    const b = booms[i];
+    if ((b.t -= dt) > 0) continue;
+    booms.splice(i, 1);
+    novas.push({ x: b.x, y: b.y, r: b.r, t: .25, max: .25, c: '#ffd24a' });
+    burst(b.x, b.y, 7, '#ffd24a', 220, .3, 2.6); shake(1.5);
+    G.boomN = G.time - (G.boomT || 0) < .5 ? (G.boomN || 0) + 1 : 0;
+    if (G.time - (G.boomT || 0) > .035) { G.boomT = G.time; sfx.crack(G.boomN); }
+    near(b.x, b.y, b.r, e => dmgE(e, b.d, e.x - b.x, e.y - b.y));
+  }
+  // 冲刺撞击：冲过去的每只敌人都吃一次伤害
+  if (P.dashT > 0) {
+    near(P.x, P.y, P.r + 20, e => { if (e.dashId !== P.dashId) { e.dashId = P.dashId; dmgE(e, S.ram * S.dmgMul, P.dx, P.dy); } });
+    if (bu && bu.dashId !== P.dashId && Math.hypot(bu.x - P.x, bu.y - P.y) < bu.r + P.r + 20) { bu.dashId = P.dashId; dmgE(bu, S.ram * S.dmgMul); }
+  }
+  for (let i = novas.length - 1; i >= 0; i--) if ((novas[i].t -= dt) <= 0) novas.splice(i, 1);
+  for (let i = zaps.length - 1; i >= 0; i--) if ((zaps[i].t -= dt) <= 0) zaps.splice(i, 1);
+  if (G.coinAcc >= 1) { const c = Math.floor(G.coinAcc); G.coinAcc -= c; G.coins += c; G.roundCoins += c; }
+}
+// 冰晶：进入吸取范围后飞向小冰块，吃到就加经验
+function updateGems(dt) {
+  const R = 70 * (1 + G.S.magnet) * (1 + .2 * G.perm.pickup);
+  for (let i = gems.length - 1; i >= 0; i--) {
+    const g = gems[i], dx = P.x - g.x, dy = P.y - g.y, d = Math.hypot(dx, dy) || 1;
+    if (g.pull || d < R) {
+      g.pull = true;
+      const sp = 260 + 900 * Math.min(1, (g.age = (g.age || 0) + dt) * 1.5);
+      g.x += dx / d * sp * dt; g.y += dy / d * sp * dt;
+    } else { g.x += g.vx * dt; g.y += g.vy * dt; g.vx *= 1 - dt * 5; g.vy *= 1 - dt * 5; }
+    if (d < P.r + 10) {
+      gems.splice(i, 1); G.xp += g.v;
+      if (G.time - (G.gemSfx || 0) > .05) { G.gemSfx = G.time; sfx.gem(); }
+    }
+  }
+  while (G.xp >= xpNeed(G.lv)) {
+    G.xp -= xpNeed(G.lv); G.lv++; G.pendingLv++;
+    // 关卡中途升级不打断：攒成技能点，过关后一起选；当下给一点小奖励（补满霜壳）
+    if (G.state === 'play') {
+      sfx.levelUp(); buzz(20); flash(.2, '#8bebff'); burst(P.x, P.y, 24, '#8bebff', 260, .5, 3);
+      floatText(P.x, P.y - 30, `升级！技能点 ×${G.pendingLv}`, '#8bebff', 18);
+      if (!P.shield) { P.shield = true; P.shieldT = 0; }
+    }
+  }
+}
+function vacuum() { for (const g of gems) g.pull = true; }
+function updateEnemies(dt, spd) {
+  for (let i = enemies.length - 1; i >= 0; i--) {
+    const e = enemies[i], sl = slowAt(e.x, e.y), edt = dt * sl;
+    e.age += dt;
+    if (e.type === 'boss') { updateBoss(e, edt); continue; }
+    applyKnock(e, dt);
+    if (e.frozen > 0) { e.frozen -= dt; continue; }
+    // 诱饵在场时，追踪型火焰改追诱饵
+    const tx = G.decoy ? G.decoy.x : P.x, ty = G.decoy ? G.decoy.y : P.y;
+    const dx = tx - e.x, dy = ty - e.y, d = Math.hypot(dx, dy) || 1;
+    let remove = false;
+    switch (e.type) {
+      case 'ember': case 'elite': {
+        const sp = (e.type === 'elite' ? 72 : 58 * (.85 + (e.seed % 1) * .3)) * spd, k = Math.min(1, dt * 2.2);
+        e.vx += (dx / d * sp - e.vx) * k; e.vy += (dy / d * sp - e.vy) * k;
+        e.x += e.vx * edt; e.y += e.vy * edt; break;
+      }
+      case 'comet':
+        e.x += e.vx * edt; e.y += e.vy * edt;
+        if (Math.random() < .6) parts.push({ x: e.x, y: e.y, vx: rand(-30, 30), vy: rand(-30, 30), life: .35, max: .35, c: '#ff9a1f', s: 3 });
+        remove = e.age > .5 && (e.x < -60 || e.x > W + 60 || e.y < -60 || e.y > H + 60); break;
+      case 'core':
+        e.fireT -= edt; e.rot += dt * .8;
+        if (e.fireT > .6) { e.x += e.vx * edt; e.y += e.vy * edt; }
+        if (e.fireT <= 0) {
+          ring(e.x, e.y, 6 + Math.min(6, Math.floor(dl() / 2)), 140 * spd, Math.random() * TAU);
+          e.fireT = 2.6; burst(e.x, e.y, 10, '#ff9a1f', 140, .3, 2); sfx.pop();
+        }
+        if (e.x < e.r || e.x > W - e.r) e.vx *= -1;
+        if (e.y < e.r || e.y > H - e.r) e.vy *= -1;
+        e.x = clamp(e.x, e.r, W - e.r); e.y = clamp(e.y, e.r, H - e.r); break;
+      case 'lobber': {
+        // 与玩家保持 260~340 的距离，并缓慢绕圈
+        const px = P.x - e.x, py = P.y - e.y, pd = Math.hypot(px, py) || 1;
+        const want = pd > 340 ? 1 : pd < 260 ? -1 : 0, sp = 60 * spd;
+        e.vx = (px / pd * want - py / pd * .5) * sp; e.vy = (py / pd * want + px / pd * .5) * sp;
+        e.x = clamp(e.x + e.vx * edt, e.r, W - e.r); e.y = clamp(e.y + e.vy * edt, e.r, H - e.r);
+        if ((e.throwT -= edt) <= 0) { e.throwT = 3.2; shells.push({ kind: 'lob', x: P.x, y: P.y, sx: e.x, sy: e.y, r: 22, t: .9, max: .9, delay: 0 }); }
+        break;
+      }
+      case 'crawler':
+        e.x += e.vx * edt; e.y += e.vy * edt;
+        e.trail += Math.hypot(e.vx, e.vy) * edt;
+        if (e.trail >= 16 && e.x > 0 && e.x < W && e.y > 0 && e.y < H) { e.trail = 0; grounds.push({ x: e.x, y: e.y, r: 10, delay: 1.2, maxDelay: 1.2, life: 2.8, max: 2.8 }); }
+        remove = e.age > 1 && (e.x < -60 || e.x > W + 60 || e.y < -60 || e.y > H + 60); break;
+      case 'cracker':
+        if (e.phase === 'chase') {
+          const sp = 95 * spd, k = Math.min(1, dt * 3);
+          e.vx += (dx / d * sp - e.vx) * k; e.vy += (dy / d * sp - e.vy) * k;
+          e.x += e.vx * edt; e.y += e.vy * edt;
+          if (d < 150) { e.phase = 'charge'; e.pt = 1; e.gapA = Math.atan2(dy, dx) + (Math.random() < .5 ? 1 : -1) * Math.PI / 2; }
+        } else if (e.phase === 'charge') {
+          if ((e.pt -= edt) <= 0) { ring(e.x, e.y, 10, 150 * spd, e.gapA + Math.PI / 10, e.gapA, .45); e.phase = 'fire2'; e.pt = .35; sfx.pop(); }
+        } else if ((e.pt -= edt) <= 0) {
+          ring(e.x, e.y, 10, 150 * spd, e.gapA, e.gapA, .45);
+          burst(e.x, e.y, 30, '#ff2e4a', 260, .5, 3); sfx.boom(); shake(4); remove = true;
+        }
+        break;
+      case 'priest':
+        e.ang += e.spin * dt * sl;
+        if (e.phase === 'warn') { if ((e.pt -= dt) <= 0) { e.phase = 'stream'; e.pt = 0; } }
+        else if (e.phase === 'stream') {
+          e.pt += dt;
+          if (e.pt % 1.25 < .8 && (e.emitT -= dt) <= 0) { e.emitT = .09; spark(e.x, e.y, e.ang, 160 * spd); }
+          if (e.pt >= 6) e.phase = 'leave';
+        }
+        break;
+    }
+    e.life -= dt;
+    if (remove || e.life <= 0) {
+      if (!remove) burst(e.x, e.y, 10, COL[e.type], 80, .4, 2);
+      enemies.splice(i, 1);
+    }
+  }
+}
+function fireWall(w) {
+  const L = w.side < 2 ? H : W, sp = w.sp || 90;
+  for (let s = 12; s < L; s += 24) {
+    if (w.gaps.some(g => s > g && s < g + w.gw)) continue;
+    if (w.side === 0) spark(-10, s, 0, sp, 7, true, w.boss);
+    else if (w.side === 1) spark(W + 10, s, Math.PI, sp, 7, true, w.boss);
+    else if (w.side === 2) spark(s, -10, Math.PI / 2, sp, 7, true, w.boss);
+    else spark(s, H + 10, -Math.PI / 2, sp, 7, true, w.boss);
+  }
+}
+function land(s) {
+  const d = Math.hypot(P.x - s.x, P.y - s.y), pr = pRadius();
+  if (s.kind === 'lob' || s.kind === 'tear') {
+    burst(s.x, s.y, 16, '#ff7a1f', 160, .4, 2.5); sfx.pop();
+    if (s.kind === 'lob') ring(s.x, s.y, 5, 90, Math.random() * TAU);
+    else { spark(s.x, s.y, 0, 110 * s.sp, 5, false, true); spark(s.x, s.y, Math.PI, 110 * s.sp, 5, false, true); }
+    if (d < s.r + pr * .5) hit(false);
+  } else {
+    burst(s.x, s.y, 40, '#ff5a1f', 300, .7, 3.5); burst(s.x, s.y, 16, '#5a3020', 160, .9, 4);
+    sfx.boom(); shake(7);
+    ring(s.x, s.y, 6, 80, Math.random() * TAU);
+    grounds.push({ x: s.x, y: s.y, r: s.r, delay: 0, maxDelay: 0, life: 3.5, max: 3.5 });
+    if (d < s.r * .85 + pr * .5) hit(false);
+  }
+}
+function hit(isSpark) {
+  if (P.inv > 0 || P.dashInv > 0) return false;
+  if (buff('mirror')) {
+    P.buffs.mirror = 0; P.inv = .6; push(P.x, P.y, 150, 500);
+    sfx.shock(); burst(P.x, P.y, 30, '#dffaff', 300, .5, 3); floatText(P.x, P.y - 24, '冰镜挡下了！', '#7fe8ff', 15);
+    return isSpark;
+  }
+  if (P.shield) {
+    P.shield = false; P.shieldT = G.S.shieldRegen * G.S.shieldRegenMul; P.inv = 1.2;
+    sfx.shieldBreak(); buzz(30, true); shake(6); burst(P.x, P.y, 24, '#dffaff', 260, .5, 2.5); flash(.25, '#7fe8ff');
+    floatText(P.x, P.y - 24, '霜壳碎裂', '#7fe8ff', 14);
+    push(P.x, P.y, 160, 520);
+    return isSpark;
+  }
+  // 霜壳已碎：背包里有道具就自动用掉一个，这一下不掉血
+  const ai = G.inv.findIndex(x => !(x.k === 'zero' && G.zeroUsed));
+  if (ai >= 0) {
+    useSlot(ai); P.inv = 1; push(P.x, P.y, 160, 520);
+    floatText(P.x, P.y - 48, '道具自动保命', '#bff6ff', 13);
+    return isSpark;
+  }
+  P.hp--; P.inv = 1.2; P.hurtT = G.S.hurtDur;
+  sfx.hurt(); buzz(70, true); shake(14); burst(P.x, P.y, 30, COL.player, 300, .6, 3); burst(P.x, P.y, 12, '#ffffff', 120, .8, 2); flash(.5, '#ff3a1f');
+  floatText(P.x, P.y - 24, '融化了一块！', '#7fe8ff', 15);
+  push(P.x, P.y, 160, 520);
+  if (P.hp <= 0 && G.devil.revive > 0) {
+    G.devil.revive--; P.hp = P.maxHp; P.inv = 2.5; P.shield = true;
+    for (const e of enemies) if (e.type !== 'boss' && Math.hypot(e.x - P.x, e.y - P.y) < 300 + e.r) dmgE(e, 9999);
+    sparks = []; push(P.x, P.y, 420, 900);
+    novas.push({ x: P.x, y: P.y, r: 300, t: .6, max: .6, c: '#ff9bf0' });
+    flash(.9, '#ffd0f5'); shake(14); sfx.zero(); buzz([30, 30, 30, 30, 120], true);
+    G.banner = { title: '冰心复苏！', sub: '恶魔的代价已经付过了，接着打', t: 2.2, c: '#ff4fd8' };
+  }
+  if (P.hp <= 0) die();
+  return isSpark;
+}
+function roundEarn(finished) {
+  const e = { kills: G.roundCoins, clear: finished ? 10 + 2 * G.round : 0, boss: finished && G.boss ? (15 + 2 * G.boss.idx) * (G.boss.cooled ? 1.5 : 1) : 0 };
+  e.total = Math.floor(e.kills + e.clear + e.boss);
+  return e;
+}
+// 关卡结束：场上火焰全部碎掉，冰晶全部吸过来，先把攒下的升级选完再进商店
+function endRound() {
+  for (const e of enemies) { if (e.type !== 'boss' && !e.dead) dropGem(e.x, e.y, e.xp); burst(e.x, e.y, 8, e.type === 'boss' ? '#dffaff' : COL[e.type], 220, .6, 2.5); }
+  for (const b of sparks) burst(b.x, b.y, 3, COL.spark, 120, .4, 2);
+  G.earn = roundEarn(true);
+  const bonus = G.earn.clear + G.earn.boss;
+  G.coins += Math.floor(bonus);
+  enemies = []; sparks = []; warns = []; shells = []; grounds = []; items = []; bolts = []; booms = []; G.beam = null; G.decoy = null;
+  if (G.round === 3 && P.hp < P.maxHp) { P.hp = P.maxHp; floatText(P.x, P.y - 58, '冰之祝福：生命回满', '#bff6ff', 16); }
+  sfx.roundEnd(); sfx.coin(); flash(.3, '#ffffff');
+  floatText(P.x, P.y - 34, `过关 +${Math.floor(bonus)} 金币`, '#ffd24a', 20);
+  G.state = 'collect'; G.collectT = 1.1; vacuum();
+}
+// 收冰晶阶段：只让冰晶和粒子继续动，吸完后结算
+// ───────── 火之恶魔：用 1 点生命上限换一个强力能力 ─────────
+const DEVIL = {
+  echo:   { name: '双重冰锥', icon: 'c_multi',   text: '每一轮冰锥都会紧接着再射一遍', once: true },
+  hell:   { name: '冰狱之力', icon: 'c_dmg',     text: '所有伤害 +60%' },
+  revive: { name: '冰心复苏', icon: 'c_heart',   text: '被烧化时原地复活一次，生命回满并冻碎身边的火' },
+  storm:  { name: '碎冰风暴', icon: 'c_shatter', text: '碎冰连爆概率 +35%，爆炸范围 +50%' },
+  reap:   { name: '寒魂收割', icon: 'c_crit',    text: '每打碎 100 只火回复 1 点生命' }
+};
+let devilSel = 0;
+// 第 2、4 关后 35% 概率出现，第 3 关后必定出现；生命上限只剩 1 时不来
+function afterRound() {
+  const pool = Object.keys(DEVIL).filter(k => !(DEVIL[k].once && G.devil[k]));
+  if (G.round >= 2 && P.maxHp >= 2 && pool.length && (G.round === 3 || Math.random() < .35)) showDevil(pool);
+  else openShop();
+}
+function showDevil(pool) {
+  G.state = 'devil'; devilSel = -1;
+  G.devilOffers = shuffle(pool).slice(0, 2);
+  sfx.alarm();
+  $('dv-cost').textContent = `代价：生命上限 ${P.maxHp} → ${P.maxHp - 1}（当前生命 ${Math.min(P.hp, P.maxHp - 1)}）`;
+  renderDevil();
+  showScreen('s-devil');
+}
+function renderDevil() {
+  $('dv-cards').innerHTML = G.devilOffers.map((k, i) => {
+    const D = DEVIL[k], have = G.devil[k] || 0;
+    return `<button type="button" class="card${i === devilSel ? ' sel' : ''}" aria-pressed="${i === devilSel}" data-i="${i}"
+      style="--qc:#FF4FD8;--qb:#200A1C;--ql:#FF4FD8;--ql2:#FF4FD8;--sc:#FF4FD8">
+      <span class="cic">${svgIcon(D.icon)}</span>
+      <span class="cbody"><span class="crow"><b class="cname">${D.name}</b><span class="chip">恶魔</span>${have ? `<span class="cq">已有 ×${have}</span>` : ''}</span>
+      <span class="ctext">${D.text.replace(/[+\-]?\d+%?/g, m => `<b>${m}</b>`)}</span></span></button>`;
+  }).join('');
+  $('dv-cards').querySelectorAll('.card').forEach(el => el.onclick = () => {
+    const i = +el.dataset.i;
+    if (i === devilSel) devilDeal(i); else { devilSel = i; renderDevil(); }
+  });
+  const dk = G.devilOffers[devilSel];
+  $('b-devil-yes').textContent = dk ? `成交「${DEVIL[dk].name}」` : '先点一个能力';
+  $('b-devil-yes').disabled = !dk;
+}
+function devilDeal(i) {
+  if (G.state !== 'devil') return;
+  const k = G.devilOffers[i];
+  if (!k) return;
+  G.devil[k] = (G.devil[k] || 0) + 1;
+  P.maxHp--; P.hp = Math.min(P.hp, P.maxHp);
+  recomputeStats();
+  sfx.beaconOn();
+  openShop();
+}
+function updateCollect(dt) {
+  updateGems(dt);
+  if ((G.collectT -= dt) > 0 && gems.length) return;
+  G.xp += gems.reduce((s, g) => s + g.v, 0); gems = [];
+  while (G.xp >= xpNeed(G.lv)) { G.xp -= xpNeed(G.lv); G.lv++; G.pendingLv++; }
+  if (G.boss) { win(); return; }
+  G.afterUp = 'shop';
+  if (!G.pendingLv && evoReady().length) G.pendingLv = 1;
+  if (G.pendingLv > 0) levelUp(); else afterRound();
+}
+const EVO = {
+  blast:   { name: '爆裂弹射', a: 'ric',   b: 'shatter', icon: 'c_ric',     text: '冰锥每次弹射都在落点炸开' },
+  frost:   { name: '极寒冰阵', a: 'orbit', b: 'freeze',  icon: 'c_orbit',   text: '环绕冰晶多 2 块，伤害 +50%，碰到就冻住' },
+  storm:   { name: '冰暴连射', a: 'multi', b: 'rate',    icon: 'c_multi',   text: '每射 8 轮，向四周爆发一整圈冰锥' },
+  zero:    { name: '绝对新星', a: 'nova',  b: 'crit',    icon: 'c_nova',    text: '霜爆必定暴击，范围 +40%，并冻住范围内的火' },
+  thunder: { name: '雷霆冰链', a: 'chain', b: 'dmg',     icon: 'c_chain',   text: '冰链发动快一倍以上，连跳数翻倍' },
+  legion:  { name: '冰灵军团', a: 'pets',  b: 'front',   icon: 'c_pets',    text: '冰灵射速翻倍，每次并排射 3 根' }
+};
+const evoReq = id => Math.min(1, CARD[id].max - 1);
+const evoHas = id => G.owned[id] && G.owned[id].L >= evoReq(id);
+const evoReady = () => Object.keys(EVO).filter(k => !G.evo[k] && evoHas(EVO[k].a) && evoHas(EVO[k].b));
+// 卡片提示：这张技能和已有技能能合成什么
+function evoHint(id) {
+  for (const k in EVO) {
+    const E = EVO[k];
+    if (G.evo[k] || (E.a !== id && E.b !== id)) continue;
+    const other = E.a === id ? E.b : E.a;
+    if (G.owned[other]) return `和「${CARD[other].name}」都到 Lv ${LV[evoReq(id)]}，可进化`;
+  }
+  return '';
+}
+// 开局只给效果一眼能看出来的技能
+const HOT = ['multi', 'orbit', 'nova', 'chain', 'shatter', 'front', 'diag', 'ric'];
+// 「帮我选」的偏好：优先加火力，已有的技能优先升级，血少时优先冰芯
+const CARD_W = { multi: 9, dmg: 8, rate: 8, front: 8, orbit: 7, shatter: 7, nova: 6, chain: 6, ric: 6, pierce: 5, diag: 5, crit: 5, pets: 5, back: 4, freeze: 4, bounce: 4, homing: 4, ram: 3, move: 3, heart: 3, magnet: 2 };
+const cardScore = f => f.evo ? 30 : (evoHint(f.id) ? 5 : 0) + (CARD_W[f.id] || 3) + (f.from >= 0 ? 2 : 0) + (f.id === 'heart' && P.hp <= 2 ? 6 : 0) + Math.random() * 1.5;
+let upPick = [], upShownAt = 0;
+function levelUp() {
+  G.need = Math.min(G.pendingLv, 5); G.pendingLv -= G.need; joy = null; keys.clear();
+  G.state = 'up'; upPick = [];
+  sfx.levelUp();
+  rollOffers();
+  G.need = Math.min(G.need, G.offers.length);
+  showUpgrade();
+}
+function rollOffers() {
+  let pool = shuffle(CARDS.filter(c => !G.owned[c.id] || G.owned[c.id].L < c.max - 1));
+  if (G.opening) pool = pool.filter(c => HOT.includes(c.id));
+  const n = G.need + 2;
+  // 还没有范围技能时，保证能选到一张，让满屏开花来得早一点
+  if (!Object.keys(G.owned).some(id => ['冰阵', '连爆'].includes(CARD[id].school))) {
+    const k = pool.findIndex(c => ['冰阵', '连爆'].includes(c.school));
+    if (k >= n) pool.unshift(pool.splice(k, 1)[0]);
+  }
+  // 已经有搭档的技能优先出现，一局里能凑出进化
+  if (!G.opening) {
+    const path = pool.filter(c => evoHint(c.id)).slice(0, 2);
+    pool = path.concat(pool.filter(c => !path.includes(c)));
+  }
+  G.offers = evoReady().map(k => ({ evo: k })).concat(pool.slice(0, n).map(c => {
+    const o = G.owned[c.id];
+    return { id: c.id, L: o ? o.L + 1 : 0, q: 0, from: o ? o.L : -1 };
+  }));
+}
+// 点卡片：选中或取消；选满后再点新卡，最早选的那张让位
+function pick(i) {
+  if (G.state !== 'up' || !G.offers[i]) return;
+  const at = upPick.indexOf(i);
+  if (at >= 0) upPick.splice(at, 1);
+  else { if (upPick.length >= G.need) upPick.shift(); upPick.push(i); }
+  sfx.pick(); renderCards();
+}
+// 确认：没选满的部分自动补齐，所以什么都不点也能一键过
+function confirmPicks(force) {
+  if (G.state !== 'up') return;
+  // 刚弹出时忽略点击，防止打到一半的手指误触
+  if (!force && performance.now() - upShownAt < 350) return;
+  const rest = G.offers.map((f, i) => [cardScore(f), i]).filter(x => !upPick.includes(x[1])).sort((a, b) => b[0] - a[0]);
+  while (upPick.length < G.need && rest.length) upPick.push(rest.shift()[1]);
+  for (const i of upPick) {
+    const off = G.offers[i];
+    if (off.evo) { G.evo[off.evo] = 1; sfx.beaconOn(); buzz(40); continue; }
+    G.owned[off.id] = { L: off.L, q: 0 };
+    if (off.id === 'heart') { P.maxHp++; P.hp = P.maxHp; }
+  }
+  recomputeStats(); G.opening = false; sfx.pick();
+  if (G.pendingLv > 0) { levelUp(); return; }
+  if (G.afterUp === 'shop') { G.afterUp = null; afterRound(); return; }
+  G.state = 'play'; P.inv = Math.max(P.inv, .5); showScreen(null);
+}
+function reroll() {
+  if (G.state !== 'up' || G.rerolls <= 0) return;
+  G.rerolls--; upPick = []; rollOffers(); G.need = Math.min(G.need, G.offers.length); renderCards(); sfx.pick();
+}
+
+// ───────── 商店 ─────────
+function openShop() {
+  G.state = 'shop';
+  G.shop = { shelves: [], refreshN: 0, heals: 0, first: G.round === 1 };
+  rollShop();
+  if (!G.shop.shelves.some(s => !whyNot(s)) && G.coins < refreshCost(0)) {
+    nextRound();
+    if (!G.banner) G.banner = { title: '金币不够，跳过商店', sub: '打碎更多火就能赚到金币', t: 1.8, c: '#ffd24a' };
+    return;
+  }
+  renderShop();
+  showScreen('s-shop');
+}
+function rollShop() {
+  let cons = shuffle(Object.keys(CONS)).slice(0, 2).map(k => ({ type: 'cons', k, price: CONS[k].price, sold: false }));
+  // 第一次进店必定有便宜的霜环震退器：这是过第二关的钥匙
+  if (G.shop.first && G.shop.refreshN === 0) {
+    cons = cons.filter(c => c.k !== 'shock').slice(0, 1);
+    cons.unshift({ type: 'cons', k: 'shock', price: 15, sold: false, tip: '霜壳碎了以后再被火碰到，会自动炸开保命' });
+  }
+  const shelves = cons;
+  // 技能货架：花金币直接买技能，已有技能越多越贵
+  const lvSum = Object.values(G.owned).reduce((n, o) => n + o.L + 1, 0);
+  for (const c of shuffle(CARDS.filter(c => !G.owned[c.id] || G.owned[c.id].L < c.max - 1)).slice(0, 2)) {
+    const o = G.owned[c.id];
+    shelves.push({ type: 'skill', id: c.id, L: o ? o.L + 1 : 0, price: 40 + 10 * lvSum, sold: false });
+  }
+  const permKeys = Object.keys(PERM).filter(k => G.perm[k] < 3);
+  if (permKeys.length) { const k = permKeys[Math.floor(Math.random() * permKeys.length)]; shelves.push({ type: 'perm', k, price: PERM[k].prices[G.perm[k]], sold: false }); }
+  shelves.push({ type: 'heal' });
+  G.shop.shelves = shelves;
+}
+function shelfPrice(s) { return s.type === 'heal' ? 25 + 15 * G.shop.heals : s.price; }
+function whyNot(s) {
+  if (s.sold) return '已售出';
+  if (s.type === 'heal' && P.hp >= P.maxHp) return '生命已满';
+  if (s.type === 'cons') {
+    const slot = G.inv.find(x => x.k === s.k);
+    if (slot && slot.n >= CONS[s.k].max) return '已达携带上限';
+    if (!slot && G.inv.length >= 3) return '道具栏已满';
+  }
+  if (G.coins < shelfPrice(s)) return '金币不足';
+  return '';
+}
+function buy(i) {
+  if (G.state !== 'shop') return;
+  const s = G.shop.shelves[i];
+  if (!s || whyNot(s)) return;
+  G.coins -= shelfPrice(s);
+  if (s.type === 'cons') {
+    const slot = G.inv.find(x => x.k === s.k);
+    if (slot) slot.n++; else G.inv.push({ k: s.k, n: 1 });
+    s.sold = true;
+  } else if (s.type === 'skill') {
+    G.owned[s.id] = { L: s.L, q: 0 }; s.sold = true;
+    if (s.id === 'heart') { P.maxHp++; P.hp = P.maxHp; }
+    recomputeStats();
+  } else if (s.type === 'perm') {
+    G.perm[s.k]++; s.sold = true;
+    if (s.k === 'hp') { P.maxHp++; P.hp++; }
+  } else { P.hp = Math.min(P.maxHp, P.hp + 1); G.shop.heals++; }
+  sfx.coin();
+  renderShop();
+}
+function refreshShop() {
+  if (G.state !== 'shop') return;
+  const c = refreshCost(G.shop.refreshN);
+  if (G.coins < c) return;
+  G.coins -= c; G.shop.refreshN++;
+  rollShop(); sfx.pick(); renderShop();
+}
+// 一键采购：缺血先补血，再买技能，然后道具，最后永久强化
+function autoBuy() {
+  if (G.state !== 'shop') return;
+  const rank = s => s.type === 'heal' ? (P.hp < P.maxHp ? 0 : 9) : s.type === 'skill' ? 1 : s.type === 'cons' ? 2 : 3;
+  const order = G.shop.shelves.map((s, i) => [rank(s), i]).sort((a, b) => a[0] - b[0]);
+  for (const [, i] of order) buy(i);
+  leaveShop();
+}
+function leaveShop() { if (G.state === 'shop') { sfx.pick(); nextRound(); } }
+function renderShop() {
+  const nr = G.round + 1;
+  $('sh-next').textContent = `下一关：第 ${nr} 关 · ${roundLen(nr)} 秒${nr % 5 === 0 ? ' · Boss' : ''}`;
+  $('sh-coins').textContent = G.coins;
+  $('sh-inv').innerHTML = `<span>背包<small style="display:block;font-size:11px;color:var(--dim);font-weight:400">被火碰到时自动使用</small></span><div class="slots">${[0, 1, 2].map(i => {
+    const s = G.inv[i];
+    return s ? `<span class="slot full" title="${CONS[s.k].name}"><u>${SLOT_KEYS[i]}</u>${svgIcon(s.k)}<i>${s.n}</i></span>` : `<span class="slot">${SLOT_KEYS[i]}</span>`;
+  }).join('')}</div><span class="pips" role="img" aria-label="生命 ${P.hp}/${P.maxHp}">${Array.from({ length: P.maxHp }, (_, i) => `<span class="pip${i < P.hp ? '' : ' e'}"></span>`).join('')}</span>`;
+  const tile = (s, i) => {
+    const why = whyNot(s), price = shelfPrice(s);
+    let tag, name, desc, ic, c = '#8BEBFF', tc = '';
+    if (s.type === 'cons') { const C = CONS[s.k]; tag = `道具 · 上限 ${C.max}`; name = C.name; desc = C.desc; ic = s.k; if (s.k === 'zero') c = '#FF4FD8'; }
+    else if (s.type === 'skill') { const K = CARD[s.id]; tag = `技能 · Lv ${LV[s.L]}`; name = K.name; desc = K.text(K.val(s.L), s.L); ic = 'c_' + s.id; c = tc = SCHOOL_C[K.school]; }
+    else if (s.type === 'perm') { const R = PERM[s.k]; tag = `永久 · ${G.perm[s.k]}/3`; name = R.name; desc = R.desc; ic = 'p_' + s.k; c = tc = '#C9F2D6'; }
+    else { tag = '服务'; name = '融冰修补'; desc = '回复 1 点生命，同一次进店每多买一次 +15'; ic = 'heal'; }
+    const cost = s.type === 'cons' && CONS[s.k].cost ? `<span class="scost">代价：${CONS[s.k].cost}</span>` : '';
+    const label = s.sold ? '已售出' : why === '金币不足' ? `${price} · 差 ${price - G.coins}` : why || (s.tip && price < CONS[s.k].price ? `${price}<s>${CONS[s.k].price}</s>` : price);
+    const btn = `<button type="button" class="buy${s.sold ? ' sold' : ''}" data-i="${i}"${why ? ' disabled' : ''} aria-label="购买${name}，${price} 金币">${label}</button>`;
+    const kbd = `<span class="kbd fine">${i + 1}</span>`;
+    if (s.tip) return `<div class="shelf feat" style="--sc:${c}"><span class="ribbon">首次特价 · 过第二关的钥匙</span><span class="sic">${svgIcon(ic)}</span>
+      <span class="smid"><b class="sname">${name}</b><span class="sdesc">${desc}</span><span class="sdesc" style="color:var(--amber)">${s.tip}</span></span>${btn}${kbd}</div>`;
+    return `<div class="shelf" style="--sc:${c}"><div class="srow">${svgIcon(ic)}<span class="stag"${tc ? ` style="color:${tc}"` : ''}>${tag}</span></div>
+      <b class="sname">${name}</b><span class="sdesc">${desc}</span>${cost}${btn}${kbd}</div>`;
+  };
+  const sh = G.shop.shelves;
+  $('sh-feature').innerHTML = sh.map((s, i) => s.tip ? tile(s, i) : '').join('');
+  $('sh-shelves').innerHTML = sh.map((s, i) => s.tip ? '' : tile(s, i)).join('');
+  document.querySelectorAll('#s-shop .buy').forEach(b => b.onclick = () => buy(+b.dataset.i));
+  const rc = refreshCost(G.shop.refreshN), rb = $('b-refresh');
+  rb.innerHTML = `刷新<small>${rc} 金币</small>`; rb.disabled = G.coins < rc;
+  $('b-auto').disabled = !sh.some(s => !whyNot(s));
+  $('b-go').textContent = '出发';
+}
+
+// ───────── 死亡与称号 ─────────
+function updateFx(dt) {
+  for (let i = parts.length - 1; i >= 0; i--) {
+    const p = parts[i]; p.x += p.vx * dt; p.y += p.vy * dt; p.vx *= 1 - dt * 3; p.vy *= 1 - dt * 3;
+    if ((p.life -= dt) <= 0) parts.splice(i, 1);
+  }
+  for (let i = floats.length - 1; i >= 0; i--) { const f = floats[i]; f.y -= 40 * dt; if ((f.life -= dt) <= 0) floats.splice(i, 1); }
+}
+
+// ───────── 绘制 ─────────
+const FONT = s => `bold ${s}px system-ui,"PingFang SC","Microsoft YaHei",sans-serif`;
+const NUM = s => `700 ${s}px "Chakra Petch",ui-monospace,system-ui,sans-serif`;
+const TTL = s => `${s}px "ZCOOL QingKe HuangYou","PingFang SC","Microsoft YaHei",sans-serif`;
+function poly(x, y, r, n, rot) {
+  ctx.beginPath();
+  for (let i = 0; i < n; i++) { const a = rot + i / n * TAU; i ? ctx.lineTo(x + Math.cos(a) * r, y + Math.sin(a) * r) : ctx.moveTo(x + Math.cos(a) * r, y + Math.sin(a) * r); }
+  ctx.closePath();
+}
+function glow(x, y, r, c, a) { ctx.globalAlpha = a; ctx.fillStyle = c; ctx.beginPath(); ctx.arc(x, y, r, 0, TAU); ctx.fill(); }
+// 水滴形：圆头朝 ang 的反方向，尖尾朝 ang
+function drop(x, y, r, ang, c) {
+  ctx.fillStyle = c; ctx.beginPath();
+  ctx.arc(x, y, r, ang + Math.PI / 2, ang + Math.PI * 1.5);
+  ctx.lineTo(x + Math.cos(ang) * r * 2.1, y + Math.sin(ang) * r * 2.1); ctx.closePath(); ctx.fill();
+}
+// 三层抖动火焰：外焰、主体、火芯
+function flame(x, y, r, tail, cols, seed) {
+  for (let i = 0; i < 3; i++) {
+    const k = [1.15, .85, .5][i], f = 1 + Math.sin(G.time * 16 + seed * 7 + i * 2) * .09;
+    drop(x, y, r * k * f, tail + Math.sin(G.time * 9 + seed + i) * .2, cols[i]);
+  }
+}
+// 场地底色和点阵只在尺寸变化时画一次，之后每帧直接贴图，手机上省掉几百次绘制
+const bgCache = {};
+function fieldBg(kind) {
+  const pw = Math.ceil(W * SC * DPR), ph = Math.ceil(H * SC * DPR), key = `${kind}|${pw}|${ph}`;
+  if (bgCache[kind] && bgCache[kind].key === key) return bgCache[kind].c;
+  const c = document.createElement('canvas'); c.width = pw; c.height = ph;
+  const g = c.getContext('2d'), k = pw / W;
+  g.fillStyle = ['#160907', '#1d1406', '#1e0907'][kind]; g.fillRect(0, 0, pw, ph);
+  g.fillStyle = kind === 1 ? '#4a3a12' : '#3d241c';
+  for (let x = 20; x < W; x += 40) for (let y = 20; y < H; y += 40) g.fillRect((x - 1) * k, (y - 1) * k, 2 * k, 2 * k);
+  bgCache[kind] = { key, c };
+  return c;
+}
+function render() {
+  if (VW < 2 || VH < 2 || W * SC < 2) return;
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  ctx.globalAlpha = 1; ctx.fillStyle = '#0d0605'; ctx.fillRect(0, 0, VW, VH);
+  if (!G) { drawAttract(); return; }
+  const sk = G.shake * (settings.lowfx ? .3 : 1), sx = rand(-sk, sk), sy = rand(-sk, sk);
+  ctx.setTransform(DPR * SC, 0, 0, DPR * SC, DPR * (OX + sx), DPR * (OY + sy));
+  // 场地：焦土 + 上升的灰烬
+  ctx.drawImage(fieldBg(G.boss ? 2 : 0), 0, 0, W, H);
+  for (const a of ash) {
+    a.y -= .0006 * a.s; if (a.y < 0) { a.y = 1; a.x = Math.random(); }
+    ctx.globalAlpha = .25 * a.s; ctx.fillStyle = '#ff9a5a'; ctx.fillRect(a.x * W + Math.sin(G.time + a.x * 20) * 6, a.y * H, 2 * a.s, 2 * a.s);
+  }
+  ctx.globalAlpha = 1;
+  ctx.strokeStyle = G.beaconActive ? COL.beacon : G.boss ? '#a8301a' : '#5a3a30'; ctx.lineWidth = 2; ctx.strokeRect(1, 1, W - 2, H - 2);
+  // 层级从下到上：地面 → 己方冰锥 → 敌人 → 己方范围特效 → 粒子和飘字 → 预警与火星 → 小冰块
+  const busy = clamp((bolts.length - 40) / 160, 0, 1);
+  drawGrounds();
+  drawBeacon();
+  drawItems();
+  ctx.globalAlpha = 1;
+  drawGems();
+  drawBolts(busy);
+  ctx.globalCompositeOperation = 'lighter';
+  if (!lowq()) for (const e of enemies) if (!e.off && e.type !== 'ember') glow(e.x, e.y, e.r * 2.3, COL[e.type], .13);
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.globalAlpha = 1;
+  for (const e of enemies) e.type === 'boss' ? drawBoss(e) : e.type === 'ember' ? drawEmber(e) : drawUnit(e);
+  drawHitFlash();
+  drawAttacks();
+  // 粒子：屏幕越忙越淡
+  ctx.globalCompositeOperation = 'lighter';
+  const pa = 1 - .5 * busy;
+  for (const p of parts) { ctx.globalAlpha = Math.max(0, p.life / p.max) * pa; ctx.fillStyle = p.c; ctx.fillRect(p.x - p.s / 2, p.y - p.s / 2, p.s, p.s); }
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.textAlign = 'center';
+  for (const f of floats) { ctx.globalAlpha = Math.min(1, f.life * 2); ctx.fillStyle = f.c; ctx.font = FONT(f.size); ctx.fillText(f.txt, f.x, f.y); }
+  ctx.globalAlpha = 1;
+  drawWarns();
+  drawShells();
+  drawBeam();
+  drawSparks();
+  if (G.decoy) drawDecoy();
+  if (G.shockRing) { const k = 1 - G.shockRing.t / .4; ctx.globalAlpha = 1 - k; ctx.strokeStyle = '#dffaff'; ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(G.shockRing.x, G.shockRing.y, 260 * k, 0, TAU); ctx.stroke(); }
+  if (G.state !== 'dead' || G.won) drawPlayer();
+  ctx.globalAlpha = 1;
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  // Boss 快被冷却时，屏幕边缘结霜
+  if (G.boss && !G.boss.cooled && G.state === 'play' && G.boss.heat / G.boss.max < .15) {
+    const g = ctx.createRadialGradient(VW / 2, VH / 2, Math.min(VW, VH) * .35, VW / 2, VH / 2, Math.max(VW, VH) * .7);
+    g.addColorStop(0, 'rgba(127,232,255,0)'); g.addColorStop(1, 'rgba(191,243,255,.35)');
+    ctx.fillStyle = g; ctx.fillRect(0, 0, VW, VH);
+  }
+  if (G.flash > 0) { ctx.globalAlpha = Math.min(.5, G.flash) * .5; ctx.fillStyle = G.flashC; ctx.fillRect(0, 0, VW, VH); ctx.globalAlpha = 1; }
+  if (G.state === 'play' || G.state === 'pause' || G.state === 'collect') drawHUD();
+}
+// 火灵精灵图：8 帧抖动火焰预先画好，几百只同屏时每只只贴一张图
+const EMBER_SZ = 44, emberSpr = { key: '', f: [] };
+function emberFrames() {
+  const px = Math.ceil(EMBER_SZ * SC * DPR), key = px + '';
+  if (emberSpr.key === key) return emberSpr.f;
+  emberSpr.key = key; emberSpr.f = [];
+  const saveCtx = ctx, saveG = G;
+  for (let i = 0; i < 8; i++) {
+    const c = document.createElement('canvas'); c.width = c.height = px;
+    const g = c.getContext('2d'), k = px / EMBER_SZ;
+    g.setTransform(k, 0, 0, k, px / 2, px / 2 + 4 * k);
+    ctx = g; G = { time: i / 8 * TAU / 16 };
+    flame(0, 0, 13, -Math.PI / 2 + Math.sin(i / 8 * TAU) * .12, FLAME.ember, 0);
+    emberEyes({ x: 0, y: 0, r: 13 }, Math.PI / 2);
+    emberSpr.f.push(c);
+  }
+  ctx = saveCtx; G = saveG;
+  return emberSpr.f;
+}
+function drawEmber(e) {
+  const f = emberFrames(), i = Math.floor((G.time * 16 / TAU + e.seed) * 8) % 8;
+  ctx.drawImage(f[i], e.x - EMBER_SZ / 2, e.y - EMBER_SZ / 2 - 4, EMBER_SZ, EMBER_SZ);
+}
+// 被打中的敌人闪白
+function drawHitFlash() {
+  ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = '#ffffff';
+  ctx.beginPath();
+  for (const e of enemies) if (e.hitT > 0 && e.type !== 'boss') { ctx.moveTo(e.x + e.r, e.y); ctx.arc(e.x, e.y, e.r, 0, TAU); }
+  ctx.globalAlpha = .55; ctx.fill();
+  ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
+  ctx.beginPath();
+  for (const e of enemies) if (e.frozen > 0) { ctx.moveTo(e.x + e.r + 3, e.y); ctx.arc(e.x, e.y, e.r + 3, 0, TAU); }
+  ctx.globalAlpha = .45; ctx.fillStyle = '#bff3ff'; ctx.fill(); ctx.globalAlpha = .9; ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1.5; ctx.stroke(); ctx.globalAlpha = 1;
+  // 精英、炉心等血厚的敌人头顶显示血条
+  for (const e of enemies) {
+    if (e.type === 'ember' || e.type === 'boss' || e.type === 'comet' || e.hp >= e.maxHp) continue;
+    const w = e.r * 2;
+    ctx.fillStyle = '#120807'; ctx.fillRect(e.x - w / 2, e.y - e.r - 10, w, 4);
+    ctx.fillStyle = '#ff5a1f'; ctx.fillRect(e.x - w / 2, e.y - e.r - 10, w * Math.max(0, e.hp / e.maxHp), 4);
+  }
+}
+function drawGems() {
+  ctx.fillStyle = '#8bebff'; ctx.beginPath();
+  for (const g of gems) {
+    const s = g.v >= 10 ? 7 : g.v >= 3 ? 5 : 3.6;
+    ctx.moveTo(g.x, g.y - s); ctx.lineTo(g.x + s * .7, g.y); ctx.lineTo(g.x, g.y + s); ctx.lineTo(g.x - s * .7, g.y); ctx.closePath();
+  }
+  ctx.fill();
+  ctx.fillStyle = '#eafbff'; ctx.beginPath();
+  for (const g of gems) if (g.v >= 3) { ctx.moveTo(g.x, g.y - 2); ctx.arc(g.x, g.y - 1, 1.6, 0, TAU); }
+  ctx.fill();
+}
+const BOLT_C = ['#8bebff', '#9fe8c8', '#c3b6ff', '#ffd24a', '#ff9bf0'];
+// 火星：黑边 + 红色外环 + 亮芯，再乱的画面里也最显眼
+function drawSparks() {
+  if (!sparks.length) return;
+  const dark = new Path2D(), body = new Path2D(), core = new Path2D();
+  for (const b of sparks) {
+    const R = b.r + 3;
+    dark.moveTo(b.x + R, b.y); dark.arc(b.x, b.y, R, 0, TAU);
+    body.moveTo(b.x + b.r, b.y); body.arc(b.x, b.y, b.r, 0, TAU);
+    core.moveTo(b.x + b.r * .5, b.y); core.arc(b.x, b.y, b.r * .5, 0, TAU);
+  }
+  ctx.globalAlpha = 1;
+  ctx.fillStyle = '#120807'; ctx.fill(dark);
+  ctx.strokeStyle = '#ff2e4a'; ctx.lineWidth = 1.6; ctx.stroke(dark);
+  ctx.fillStyle = '#ff7a1f'; ctx.fill(body);
+  ctx.fillStyle = '#fff3b0'; ctx.fill(core);
+}
+function drawBolts(busy) {
+  ctx.lineCap = 'round';
+  // 冰锥：彩色拖尾 + 菱形冰晶 + 亮芯，同色一批画，几百根也只有几次绘制
+  for (let k = 0; k < BOLT_C.length; k++) {
+    let any = false;
+    const tail = new Path2D(), shard = new Path2D(), core = new Path2D();
+    for (const b of bolts) {
+      if (b.k !== k) continue;
+      any = true;
+      const m = Math.hypot(b.vx, b.vy) || 1, ux = b.vx / m, uy = b.vy / m, nx = -uy, ny = ux;
+      tail.moveTo(b.x - ux * 6, b.y - uy * 6); tail.lineTo(b.x - ux * 24, b.y - uy * 24);
+      shard.moveTo(b.x + ux * 9, b.y + uy * 9); shard.lineTo(b.x + nx * 3.4, b.y + ny * 3.4);
+      shard.lineTo(b.x - ux * 9, b.y - uy * 9); shard.lineTo(b.x - nx * 3.4, b.y - ny * 3.4); shard.closePath();
+      core.moveTo(b.x + ux * 5, b.y + uy * 5); core.lineTo(b.x - ux * 4, b.y - uy * 4);
+    }
+    if (!any) continue;
+    if (!lowq() && busy < .5) { ctx.globalAlpha = .3 * (1 - busy); ctx.strokeStyle = BOLT_C[k]; ctx.lineWidth = 5; ctx.stroke(tail); }
+    ctx.globalAlpha = 1 - .55 * busy; ctx.fillStyle = BOLT_C[k]; ctx.fill(shard);
+    ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1.4; ctx.stroke(core);
+  }
+  ctx.globalAlpha = 1; ctx.lineCap = 'butt';
+}
+function drawAttacks() {
+  ctx.globalCompositeOperation = 'lighter'; ctx.lineCap = 'round';
+  // 霜爆和碎冰爆炸的圈
+  for (const n of novas) {
+    const k = 1 - n.t / n.max;
+    ctx.globalAlpha = (1 - k) * .8; ctx.strokeStyle = n.c; ctx.lineWidth = 6 * (1 - k) + 1;
+    ctx.beginPath(); ctx.arc(n.x, n.y, n.r * (.35 + .65 * k), 0, TAU); ctx.stroke();
+    ctx.globalAlpha = (1 - k) * .15; ctx.fillStyle = n.c; ctx.fill();
+  }
+  // 冰链：折线闪电
+  for (const z of zaps) {
+    ctx.globalAlpha = Math.min(1, z.t / .1); ctx.strokeStyle = '#c3b6ff'; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(z.pts[0].x, z.pts[0].y);
+    for (let i = 1; i < z.pts.length; i++) {
+      const a = z.pts[i - 1], b = z.pts[i], mx = (a.x + b.x) / 2 + rand(-10, 10), my = (a.y + b.y) / 2 + rand(-10, 10);
+      ctx.lineTo(mx, my); ctx.lineTo(b.x, b.y);
+    }
+    ctx.stroke(); ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1.2; ctx.stroke();
+  }
+  ctx.globalAlpha = 1; ctx.lineCap = 'butt'; ctx.globalCompositeOperation = 'source-over';
+  // 冰灵伙伴
+  for (let k = 0; k < G.S.pets && G.state !== 'dead'; k++) {
+    const pt = G.pets[k]; if (!pt) continue;
+    ctx.globalCompositeOperation = 'lighter'; glow(pt.x, pt.y, 12, '#8bebff', .3); ctx.globalCompositeOperation = 'source-over';
+    ctx.globalAlpha = 1; ctx.fillStyle = '#eafbff'; poly(pt.x, pt.y, 6, 4, 0); ctx.fill(); ctx.strokeStyle = '#3fb6da'; ctx.lineWidth = 1.5; ctx.stroke();
+    ctx.fillStyle = '#0b2530'; ctx.fillRect(pt.x - 2.5, pt.y - 1, 1.6, 1.6); ctx.fillRect(pt.x + 1, pt.y - 1, 1.6, 1.6);
+  }
+  // 站桩连射：脚下亮一圈，提示火力翻倍
+  if (P.still && G.state === 'play') {
+    ctx.globalAlpha = .35 + .15 * Math.sin(G.time * 12); ctx.strokeStyle = '#ffd24a'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(P.x, P.y, P.r + 12, 0, TAU); ctx.stroke(); ctx.globalAlpha = 1;
+  }
+  // 环绕冰晶
+  if (G.S.orbit && G.state !== 'dead') {
+    for (let k = 0; k < G.S.orbit; k++) {
+      const a = G.orbA + k / G.S.orbit * TAU, x = P.x + Math.cos(a) * 64, y = P.y + Math.sin(a) * 64;
+      ctx.globalCompositeOperation = 'lighter'; glow(x, y, 14, '#8bebff', .25); ctx.globalCompositeOperation = 'source-over';
+      ctx.globalAlpha = 1; ctx.fillStyle = '#eafbff'; poly(x, y, 8, 4, a * 2); ctx.fill();
+      ctx.strokeStyle = '#3fb6da'; ctx.lineWidth = 1.5; ctx.stroke();
+    }
+  }
+  ctx.globalAlpha = 1;
+}
+function drawGrounds() {
+  for (const g of grounds) {
+    if (g.delay > 0) {
+      // 未点燃：暗红冒烟，点燃前 0.35 秒闪黄
+      const blink = g.delay < .35 && Math.sin(G.time * 40) > 0;
+      ctx.globalAlpha = .55; ctx.fillStyle = blink ? '#ffd24a' : '#4a1208';
+      ctx.beginPath(); ctx.arc(g.x, g.y, g.r, 0, TAU); ctx.fill();
+    } else {
+      const k = Math.min(1, g.life / .5), fl = 1 + Math.sin(G.time * 20 + g.x) * .08;
+      ctx.globalCompositeOperation = 'lighter';
+      glow(g.x, g.y, g.r * 1.25 * fl, '#ff3d00', .25 * k);
+      glow(g.x, g.y, g.r * .8 * fl, '#ff9a1f', .35 * k);
+      ctx.globalCompositeOperation = 'source-over';
+    }
+  }
+  ctx.globalAlpha = 1;
+}
+function drawBeacon() {
+  if (!G.beacon) return;
+  const b = G.beacon, pulse = 1 + Math.sin(G.time * 6) * .06, blink = b.life < 2 ? (Math.sin(G.time * 20) > 0 ? 1 : .4) : 1;
+  ctx.globalCompositeOperation = 'lighter';
+  glow(b.x, b.y, b.r * 1.6 * pulse, COL.beacon, .08 * blink);
+  ctx.globalAlpha = .8 * blink; ctx.strokeStyle = COL.beacon; ctx.lineWidth = 2; ctx.setLineDash([8, 6]);
+  ctx.beginPath(); ctx.arc(b.x, b.y, b.r * pulse, G.time, G.time + TAU); ctx.stroke(); ctx.setLineDash([]);
+  if (b.prog > 0) { ctx.lineWidth = 5; ctx.globalAlpha = 1; ctx.beginPath(); ctx.arc(b.x, b.y, b.r + 6, -1.57, -1.57 + b.prog / 1.2 * TAU); ctx.stroke(); }
+  ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = .9; ctx.fillStyle = COL.beacon; ctx.textAlign = 'center';
+  ctx.font = FONT(13); ctx.fillText('贪婪信标', b.x, b.y + 5);
+  ctx.globalAlpha = 1;
+}
+function drawItems() {
+  for (const it of items) {
+    const y = it.y + Math.sin(G.time * 3 + it.bob) * 3, blink = it.life < 1.5 ? (Math.sin(G.time * 18) > 0 ? 1 : .3) : 1;
+    ctx.globalCompositeOperation = 'lighter';
+    glow(it.x, y, 26, COL.player, .12 * blink);
+    ctx.globalCompositeOperation = 'source-over';
+    // 冰面圆章 + 图标；金边道具外圈是金色
+    ctx.globalAlpha = blink; ctx.fillStyle = '#0e1a20'; ctx.beginPath(); ctx.arc(it.x, y, 17, 0, TAU); ctx.fill();
+    ctx.strokeStyle = it.risky ? '#ffd24a' : '#8bebff'; ctx.lineWidth = it.risky ? 2.5 : 1.5; ctx.stroke();
+    drawIcon('i_' + it.kind, it.x, y, 20, it.kind === 'drop' ? '#ff9bb0' : '#8bebff', 2.2);
+  }
+  ctx.globalAlpha = 1;
+}
+function drawWarns() {
+  for (const w of warns) {
+    const k = 1 - w.t / w.max, blink = Math.sin(G.time * 30) > 0 ? 1 : .5;
+    ctx.globalAlpha = .3 + .5 * k * blink; ctx.strokeStyle = COL.warn; ctx.lineWidth = 2;
+    if (w.kind === 'wall') {
+      // 火墙：所在边整条变红，缺口用黄线标出
+      ctx.globalAlpha = .25 + .4 * k * blink; ctx.fillStyle = '#ff3d00';
+      if (w.side === 0) ctx.fillRect(0, 0, 14, H); else if (w.side === 1) ctx.fillRect(W - 14, 0, 14, H);
+      else if (w.side === 2) ctx.fillRect(0, 0, W, 14); else ctx.fillRect(0, H - 14, W, 14);
+      ctx.globalAlpha = 1; ctx.strokeStyle = COL.warn; ctx.lineWidth = 3;
+      for (const g of w.gaps) {
+        ctx.beginPath();
+        if (w.side < 2) { const x = w.side === 0 ? 20 : W - 20; ctx.moveTo(x, g); ctx.lineTo(x, g + w.gw); }
+        else { const y = w.side === 2 ? 20 : H - 20; ctx.moveTo(g, y); ctx.lineTo(g + w.gw, y); }
+        ctx.stroke();
+      }
+    } else if (w.type === 'comet' || w.type === 'crawler') {
+      ctx.strokeStyle = w.type === 'crawler' ? '#ff3d2e' : COL.warn;
+      ctx.setLineDash([10, 10]); ctx.beginPath(); ctx.moveTo(w.x, w.y); ctx.lineTo(w.x + w.dx * 2400, w.y + w.dy * 2400); ctx.stroke(); ctx.setLineDash([]);
+    } else {
+      const r = 22 - 8 * k;
+      ctx.beginPath(); ctx.moveTo(w.x - r, w.y - r); ctx.lineTo(w.x + r, w.y + r); ctx.moveTo(w.x + r, w.y - r); ctx.lineTo(w.x - r, w.y + r); ctx.stroke();
+    }
+  }
+  ctx.globalAlpha = 1;
+}
+function drawShells() {
+  for (const s of shells) {
+    if (s.delay > 0) continue;
+    const k = 1 - s.t / s.max, late = s.t < .25;
+    // 落点圈：外圈固定，内圈从外向内收缩
+    ctx.globalAlpha = .25 + .2 * k; ctx.fillStyle = late ? '#ff2e1f' : '#ffd24a';
+    ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, TAU); ctx.fill();
+    ctx.globalAlpha = .9; ctx.strokeStyle = late ? '#ff2e1f' : '#ffd24a'; ctx.lineWidth = 2; ctx.setLineDash([6, 5]);
+    ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, TAU); ctx.stroke(); ctx.setLineDash([]);
+    ctx.beginPath(); ctx.arc(s.x, s.y, s.r * (1 - k) + 2, 0, TAU); ctx.stroke();
+    if (s.kind === 'lob' || s.kind === 'tear') {
+      // 抛物线飞行的火球 / 从巨眼落下的泪火
+      const x = s.sx + (s.x - s.sx) * k, y = s.sy + (s.y - s.sy) * k - Math.sin(Math.PI * k) * 90;
+      ctx.globalAlpha = 1; flame(x, y, 8, -Math.PI / 2, s.kind === 'tear' ? FLAME.comet : FLAME.small, s.sx);
+    } else {
+      // 陨石从右上方斜着坠落，阴影逐渐变大
+      ctx.globalAlpha = .4 * k; ctx.fillStyle = '#000'; ctx.beginPath(); ctx.ellipse(s.x, s.y, s.r * .6 * k, s.r * .3 * k, 0, 0, TAU); ctx.fill();
+      const off = (1 - k) * 520, x = s.x + off * .6, y = s.y - off;
+      ctx.globalAlpha = 1;
+      ctx.globalCompositeOperation = 'lighter'; glow(x, y, 26, '#ff5a1f', .35); ctx.globalCompositeOperation = 'source-over';
+      drop(x, y, 18, Math.atan2(-1, .6), '#ff7a1f');
+      ctx.fillStyle = '#4a2a20'; poly(x, y, 13, 7, G.time * 3); ctx.fill();
+      ctx.fillStyle = '#ff9a1f'; ctx.beginPath(); ctx.arc(x - 3, y + 2, 3, 0, TAU); ctx.fill();
+    }
+  }
+  ctx.globalAlpha = 1;
+}
+function drawBeam() {
+  const bu = G.boss && G.boss.unit;
+  if (bu && bu.kind === 'eye' && bu.st === 'lock') {
+    ctx.globalAlpha = Math.sin(G.time * 30) > 0 ? .9 : .4; ctx.strokeStyle = '#ff2e1f'; ctx.lineWidth = 2; ctx.setLineDash([12, 8]);
+    ctx.beginPath(); ctx.moveTo(bu.x, bu.y); ctx.lineTo(bu.x + Math.cos(bu.aim) * 1600, bu.y + Math.sin(bu.aim) * 1600); ctx.stroke(); ctx.setLineDash([]);
+  }
+  if (!G.beam) return;
+  const b = G.beam, x2 = b.x + Math.cos(b.a) * 1600, y2 = b.y + Math.sin(b.a) * 1600, fl = 1 + Math.sin(G.time * 40) * .1;
+  ctx.globalCompositeOperation = 'lighter'; ctx.lineCap = 'round';
+  ctx.globalAlpha = .35; ctx.strokeStyle = '#ff3d00'; ctx.lineWidth = b.w * 3 * fl; ctx.beginPath(); ctx.moveTo(b.x, b.y); ctx.lineTo(x2, y2); ctx.stroke();
+  ctx.globalAlpha = .9; ctx.strokeStyle = '#ff9a1f'; ctx.lineWidth = b.w * 1.6; ctx.stroke();
+  ctx.globalAlpha = 1; ctx.strokeStyle = '#fff3b0'; ctx.lineWidth = b.w * .6; ctx.stroke();
+  ctx.globalCompositeOperation = 'source-over'; ctx.lineCap = 'butt'; ctx.globalAlpha = 1;
+}
+function drawDecoy() {
+  const d = G.decoy, s = 11, blink = d.t < 1 ? (Math.sin(G.time * 20) > 0 ? 1 : .4) : 1;
+  ctx.globalAlpha = .55 * blink; ctx.fillStyle = '#bff3ff';
+  ctx.beginPath(); ctx.roundRect(d.x - s, d.y - s, s * 2, s * 2, 4); ctx.fill();
+  ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1.5; ctx.setLineDash([3, 3]); ctx.stroke(); ctx.setLineDash([]);
+  ctx.globalAlpha = .25 * blink; ctx.strokeStyle = COL.player; ctx.beginPath(); ctx.arc(d.x, d.y, 150, 0, TAU); ctx.stroke();
+  ctx.globalAlpha = 1;
+}
+function drawUnit(e) {
+  const fade = e.life < 1 ? (Math.sin(G.time * 25) > 0 ? 1 : .4) : 1;
+  ctx.globalAlpha = fade;
+  const upTail = Math.atan2(-e.vy * .6 - 50, -e.vx * .6);
+  switch (e.type) {
+    case 'ember': flame(e.x, e.y, e.r, upTail, FLAME.ember, e.seed); emberEyes(e); break;
+    case 'elite':
+      flame(e.x, e.y, e.r, upTail, FLAME.elite, e.seed); emberEyes(e);
+      ctx.strokeStyle = '#ff4fd8'; ctx.lineWidth = 2.5; ctx.globalAlpha = .75 * fade;
+      ctx.beginPath(); ctx.arc(e.x, e.y, e.r + 6 + Math.sin(G.time * 8) * 2, 0, TAU); ctx.stroke(); break;
+    case 'comet': flame(e.x, e.y, e.r, Math.atan2(-e.vy, -e.vx), FLAME.comet, e.seed); break;
+    case 'core': {
+      const charge = e.fireT < .6 ? 1 - e.fireT / .6 : 0;
+      ctx.fillStyle = '#2a1410'; poly(e.x, e.y, e.r, 6, e.rot); ctx.fill();
+      ctx.strokeStyle = charge ? '#ffe08a' : '#ff6a2a'; ctx.lineWidth = 2 + charge * 2; ctx.globalAlpha = (.6 + .4 * charge) * fade;
+      ctx.beginPath();
+      for (let j = 0; j < 3; j++) { const a = e.rot * 1.3 + j * 2.1; ctx.moveTo(e.x, e.y); ctx.lineTo(e.x + Math.cos(a) * e.r * .8, e.y + Math.sin(a) * e.r * .8); }
+      ctx.stroke();
+      if (charge) { ctx.strokeStyle = '#ff9a1f'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(e.x, e.y, e.r + (1 - charge) * 26, 0, TAU); ctx.stroke(); }
+      break;
+    }
+    case 'lobber': {
+      ctx.fillStyle = '#3a1a10'; ctx.beginPath(); ctx.arc(e.x, e.y, e.r, 0, TAU); ctx.fill();
+      ctx.fillStyle = '#ff7a3a'; ctx.beginPath(); ctx.arc(e.x - 5, e.y + 3, 2.5, 0, TAU); ctx.arc(e.x + 4, e.y + 5, 2, 0, TAU); ctx.fill();
+      const wind = e.throwT < .5 ? 1 + (.5 - e.throwT) : 1;
+      flame(e.x, e.y - e.r * .8, 7 * wind, -Math.PI / 2, FLAME.small, e.seed); break;
+    }
+    case 'crawler': {
+      const a = Math.atan2(e.vy, e.vx);
+      for (let j = 2; j >= 0; j--) {
+        const x = e.x - Math.cos(a) * j * 11, y = e.y - Math.sin(a) * j * 11, r = e.r * (1 - j * .18);
+        ctx.fillStyle = j ? '#5a0f08' : '#7a1a0a'; ctx.beginPath(); ctx.arc(x, y, r, 0, TAU); ctx.fill();
+        ctx.fillStyle = '#ff5a1f'; ctx.globalAlpha = (.6 + Math.sin(G.time * 6 + j) * .3) * fade;
+        ctx.beginPath(); ctx.arc(x, y, r * .35, 0, TAU); ctx.fill(); ctx.globalAlpha = fade;
+      }
+      break;
+    }
+    case 'cracker': {
+      const charge = e.phase === 'charge' ? 1 - e.pt : e.phase === 'fire2' ? 1 : 0, s = 1 + charge * .35;
+      const white = charge > .6 && Math.sin(G.time * 40) > 0;
+      ctx.save(); ctx.translate(e.x, e.y); ctx.scale(s, s);
+      ctx.fillStyle = white ? '#ffffff' : '#d01a2a'; ctx.beginPath(); ctx.roundRect(-8, -13, 16, 26, 4); ctx.fill();
+      ctx.fillStyle = '#ffd24a'; ctx.fillRect(-8, -6, 16, 3); ctx.fillRect(-8, 4, 16, 3);
+      ctx.restore();
+      flame(e.x, e.y - 15 * s, 3 + Math.random() * 1.5, -Math.PI / 2, FLAME.small, e.seed);
+      if (charge) {
+        // 刻度环与缺口提示
+        ctx.globalAlpha = .8; ctx.strokeStyle = '#ffd24a'; ctx.lineWidth = 2;
+        for (let j = 0; j < 10; j++) {
+          const a = e.gapA + Math.PI / 10 + j / 10 * TAU;
+          if (angDiff(a, e.gapA) < .45) continue;
+          ctx.beginPath(); ctx.moveTo(e.x + Math.cos(a) * 26, e.y + Math.sin(a) * 26); ctx.lineTo(e.x + Math.cos(a) * 34, e.y + Math.sin(a) * 34); ctx.stroke();
+        }
+        ctx.strokeStyle = '#7fe8ff'; ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.arc(e.x, e.y, 38, e.gapA - .4, e.gapA + .4); ctx.stroke();
+      }
+      break;
+    }
+    case 'priest': {
+      if (e.phase === 'warn') {
+        ctx.globalAlpha = .5 + .4 * (Math.sin(G.time * 20) > 0 ? 1 : 0); ctx.strokeStyle = COL.priest; ctx.lineWidth = 2; ctx.setLineDash([8, 8]);
+        ctx.beginPath(); ctx.moveTo(e.x, e.y); ctx.lineTo(e.x + Math.cos(e.ang) * 900, e.y + Math.sin(e.ang) * 900); ctx.stroke(); ctx.setLineDash([]);
+        ctx.globalAlpha = fade;
+      }
+      ctx.fillStyle = '#3a0b2e'; poly(e.x, e.y, e.r, 4, G.time * .5); ctx.fill();
+      ctx.strokeStyle = COL.priest; ctx.lineWidth = 2; ctx.stroke();
+      flame(e.x, e.y - e.r * .6, 9, -Math.PI / 2, FLAME.violet, e.seed); break;
+    }
+  }
+  ctx.globalAlpha = 1;
+}
+// 火灵的怒眼：两道斜线，看向小冰块
+function emberEyes(e, gaze) {
+  const r = e.r, a = gaze != null ? gaze : Math.atan2(P.y - e.y, P.x - e.x), lx = Math.cos(a) * r * .18, ly = Math.sin(a) * r * .12;
+  const x = e.x + lx, y = e.y + r * .12 + ly;
+  ctx.strokeStyle = '#2a0805'; ctx.lineWidth = Math.max(2, r * .16); ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(x - r * .5, y - r * .12); ctx.lineTo(x - r * .16, y + r * .02);
+  ctx.moveTo(x + r * .5, y - r * .12); ctx.lineTo(x + r * .16, y + r * .02);
+  ctx.stroke(); ctx.lineCap = 'butt';
+}
+function drawBoss(e) {
+  const B = G.boss, p = B.heat / B.max;
+  ctx.globalAlpha = e.spawnT > 0 ? (1 - e.spawnT / 1.6) * (Math.sin(G.time * 20) > 0 ? 1 : .5) : 1;
+  if (B.kind === 'furnace') {
+    if (e.st === 'aim') {
+      ctx.save(); ctx.globalAlpha = .18 + .2 * (Math.sin(G.time * 30) > 0 ? 1 : 0); ctx.fillStyle = '#ffd24a';
+      ctx.beginPath(); ctx.moveTo(e.x, e.y); ctx.arc(e.x, e.y, 700, e.aim - .55, e.aim + .55); ctx.closePath(); ctx.fill(); ctx.restore();
+    }
+    // 方形熔炉：烟囱、炉盖、带栅栏的炉门，炉火亮度随热量变化
+    const r = e.r, al = ctx.globalAlpha;
+    ctx.fillStyle = '#4e2a20';
+    ctx.fillRect(e.x - r * .8, e.y - r * 1.45, r * .34, r * .55); ctx.fillRect(e.x + r * .46, e.y - r * 1.45, r * .34, r * .55);
+    ctx.fillStyle = '#3a1e18'; ctx.beginPath(); ctx.roundRect(e.x - r * 1.05, e.y - r * .95, r * 2.1, r * 1.95, 5); ctx.fill();
+    ctx.strokeStyle = '#ff6a2a'; ctx.lineWidth = 3; ctx.stroke();
+    ctx.fillStyle = '#4e2a20'; ctx.fillRect(e.x - r * 1.2, e.y - r * 1.08, r * 2.4, r * .3);
+    ctx.globalCompositeOperation = 'lighter';
+    glow(e.x, e.y + r * .2, r * (.4 + .6 * p) * 1.5, '#ff5a1f', .35 * al);
+    ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = al;
+    ctx.fillStyle = '#ff5a1f'; ctx.fillRect(e.x - r * .6, e.y - r * .22, r * 1.2, r * .95);
+    ctx.globalAlpha = al * (.35 + .65 * p); ctx.fillStyle = '#ffd24a'; ctx.fillRect(e.x - r * .52, e.y + r * .3, r * 1.04, r * .34);
+    ctx.globalAlpha = al; ctx.strokeStyle = '#2a120c'; ctx.lineWidth = 3; ctx.beginPath();
+    for (let i = 1; i < 4; i++) { const x = e.x - r * .6 + i * r * .3; ctx.moveTo(x, e.y - r * .22); ctx.lineTo(x, e.y + r * .73); }
+    ctx.stroke();
+    ctx.strokeStyle = '#ffb020'; ctx.lineWidth = 4; ctx.lineCap = 'round'; ctx.beginPath();
+    ctx.moveTo(e.x - r * .62, e.y - r * .58); ctx.lineTo(e.x - r * .22, e.y - r * .44);
+    ctx.moveTo(e.x + r * .62, e.y - r * .58); ctx.lineTo(e.x + r * .22, e.y - r * .44); ctx.stroke(); ctx.lineCap = 'butt';
+    ctx.globalAlpha = 1;
+    const a = e.aim != null ? e.aim : Math.PI / 2;
+    ctx.save(); ctx.translate(e.x, e.y); ctx.rotate(a); ctx.fillStyle = '#1a0a08'; ctx.fillRect(e.r * .55, -9, e.r * .6, 18); ctx.restore();
+  } else if (B.kind === 'wheel') {
+    const rev = e.revT < .7 && Math.sin(G.time * 30) > 0;
+    ctx.strokeStyle = 'rgba(255,154,31,.25)'; ctx.lineWidth = 2;
+    for (let a = 0; a < 3; a++) { const an = e.ang + a * TAU / 3; ctx.beginPath(); ctx.moveTo(e.x, e.y); ctx.lineTo(e.x + Math.cos(an) * 228, e.y + Math.sin(an) * 228); ctx.stroke(); }
+    for (const pt of e.pts) {
+      if (pt.off && !e.off) continue;
+      if (pt.i === 7) flame(pt.x, pt.y, 14, -Math.PI / 2, rev ? ['#ffffff', '#fff3b0', '#ffffff'] : FLAME.comet, pt.a);
+      else { ctx.fillStyle = rev ? '#ffffff' : '#ff7a1f'; ctx.beginPath(); ctx.arc(pt.x, pt.y, pt.r, 0, TAU); ctx.fill(); ctx.fillStyle = '#ffe9a8'; ctx.beginPath(); ctx.arc(pt.x, pt.y, pt.r * .5, 0, TAU); ctx.fill(); }
+    }
+    const c = e.charge;
+    if (c) {
+      if (c.st === 'warn') { ctx.globalAlpha = .8; ctx.strokeStyle = COL.warn; ctx.lineWidth = 2; ctx.setLineDash([10, 10]); ctx.beginPath(); ctx.moveTo(c.x, c.y); ctx.lineTo(c.x + c.dx * 1600, c.y + c.dy * 1600); ctx.stroke(); ctx.setLineDash([]); ctx.globalAlpha = 1; }
+      flame(c.x, c.y, 14, Math.atan2(-c.dy, -c.dx), FLAME.comet, 5);
+    }
+    const ex = e.exposed > 0;
+    ctx.fillStyle = ex ? '#bff3ff' : '#2a1410'; poly(e.x, e.y, e.r, 3, -Math.PI / 2 + e.ang * .3); ctx.fill();
+    ctx.strokeStyle = ex ? '#ffffff' : '#ffd24a'; ctx.lineWidth = 3; ctx.stroke();
+    if (ex) { ctx.globalAlpha = .3; ctx.strokeStyle = COL.player; ctx.beginPath(); ctx.arc(e.x, e.y, e.r + DANGER_R, 0, TAU); ctx.stroke(); ctx.globalAlpha = 1; }
+  } else {
+    ctx.save(); ctx.translate(e.x, e.y);
+    ctx.globalCompositeOperation = 'lighter'; glow(0, 0, 70, '#ff5a1f', .25); ctx.globalCompositeOperation = 'source-over';
+    ctx.globalAlpha = 1;
+    if (e.closed) {
+      ctx.strokeStyle = '#ff2e4a'; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(-60, 0); ctx.quadraticCurveTo(0, 22, 60, 0); ctx.stroke();
+      ctx.globalAlpha = .4; ctx.strokeStyle = COL.player; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(0, 0, e.r + DANGER_R, 0, TAU); ctx.stroke();
+    } else {
+      ctx.fillStyle = '#ffd24a'; ctx.beginPath(); ctx.ellipse(0, 0, 60, 34, 0, 0, TAU); ctx.fill();
+      ctx.fillStyle = '#ff5a1f'; ctx.beginPath(); ctx.arc(0, 0, 24, 0, TAU); ctx.fill();
+      const la = e.aim != null ? e.aim : Math.atan2(P.y - e.y, P.x - e.x);
+      ctx.fillStyle = '#2a0805'; poly(Math.cos(la) * 8, Math.sin(la) * 8, 12, 4, 0); ctx.fill();
+      ctx.strokeStyle = '#8a1a08'; ctx.lineWidth = 4;
+      ctx.beginPath(); ctx.moveTo(-64, 0); ctx.quadraticCurveTo(0, -50, 64, 0); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(-64, 0); ctx.quadraticCurveTo(0, 50, 64, 0); ctx.stroke();
+    }
+    ctx.restore();
+  }
+  ctx.globalAlpha = 1;
+}
+function drawPlayer() {
+  ctx.globalCompositeOperation = 'lighter';
+  P.trail.forEach((t, i) => glow(t.x, t.y, P.r * (t.d ? 1.2 : .7) * (i / P.trail.length), COL.player, (t.d ? .35 : .12) * i / P.trail.length));
+  glow(P.x, P.y, P.r * 3, COL.player, .14);
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.globalAlpha = .6; ctx.fillStyle = '#06151b'; ctx.beginPath(); ctx.arc(P.x, P.y, P.r + 11, 0, TAU); ctx.fill();
+  ctx.globalAlpha = .95; ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1.8; ctx.stroke(); ctx.globalAlpha = 1;
+  if (buff('hourglass')) { ctx.globalAlpha = .15; ctx.setLineDash([4, 8]); ctx.beginPath(); ctx.arc(P.x, P.y, 180, 0, TAU); ctx.stroke(); ctx.setLineDash([]); }
+  if (buff('mirror')) { ctx.globalAlpha = .7; ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 2; poly(P.x, P.y, 26, 4, G.time * 2); ctx.stroke(); }
+  // 小冰块：受伤融化变小（只是外观，碰撞范围不变）
+  const lost = clamp(P.maxHp - P.hp, 0, 3);
+  const vis = P.inv > 0 ? (Math.sin(G.time * 40) > 0 ? 1 : .3) : 1, s = P.r * 1.5 * (1 - .08 * lost) * (buff('step') ? .85 : 1);
+  ctx.save(); ctx.translate(P.x, P.y);
+  // 受伤后脚下有一滩化开的水
+  if (lost) { ctx.globalAlpha = vis * .5; ctx.fillStyle = '#3fb6da'; ctx.beginPath(); ctx.ellipse(0, s * .95, s * (1 + .18 * lost), s * .3, 0, 0, TAU); ctx.fill(); }
+  if (P.dashT > 0) { ctx.rotate(Math.atan2(P.dy, P.dx)); ctx.scale(1.4, .75); }
+  else ctx.rotate(Math.sin(G.time * 2) * .06 + clamp(P.vx / 250, -1, 1) * .12);
+  ctx.scale(1, 1 - .1 * lost);
+  // 等轴小冰块：顶面、左面、右面
+  const face = (pts, c) => {
+    ctx.fillStyle = c; ctx.strokeStyle = c; ctx.beginPath();
+    pts.forEach(([x, y], i) => i ? ctx.lineTo(x * s, y * s) : ctx.moveTo(x * s, y * s));
+    ctx.closePath(); ctx.fill(); ctx.stroke();
+  };
+  ctx.globalAlpha = vis; ctx.lineWidth = s * .2; ctx.lineJoin = 'round';
+  face([[-1, -.3], [0, .2], [0, 1], [-1, .5]], '#9be9fb');
+  face([[0, .2], [1, -.3], [1, .5], [0, 1]], '#3fb6da');
+  face([[-1, -.3], [0, -.8], [1, -.3], [0, .2]], '#eafbff');
+  ctx.lineJoin = 'miter';
+  ctx.strokeStyle = '#ffffff'; ctx.lineWidth = s * .12; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(-s * .58, -s * .36); ctx.lineTo(-s * .14, -s * .58); ctx.stroke(); ctx.lineCap = 'butt';
+  ctx.fillStyle = '#0b2530';
+  ctx.beginPath(); ctx.arc(-s * .66, s * .22, s * .12, 0, TAU); ctx.arc(-s * .3, s * .4, s * .12, 0, TAU); ctx.fill();
+  if (P.hp < P.maxHp) drop(s * .62, s * .9, s * .14, -Math.PI / 2, COL.player);
+  ctx.restore();
+  // 霜壳护盾
+  if (P.shield) {
+    ctx.globalAlpha = .12 * vis; ctx.fillStyle = COL.player; poly(P.x, P.y, s + 9, 6, G.time * .4); ctx.fill();
+    ctx.globalAlpha = .8 * vis; ctx.strokeStyle = '#dffaff'; ctx.lineWidth = 2; ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+}
+function hudTag(txt, x, y, bg, fg) {
+  ctx.font = FONT(11); const w = ctx.measureText(txt).width + 12;
+  ctx.fillStyle = bg; ctx.fillRect(x, y - 12, w, 17);
+  ctx.fillStyle = fg; ctx.textAlign = 'left'; ctx.fillText(txt, x + 6, y + 1);
+  return w;
+}
+function diamond(x, y, s, fill, stroke) {
+  ctx.beginPath(); ctx.moveTo(x, y - s); ctx.lineTo(x + s, y); ctx.lineTo(x, y + s); ctx.lineTo(x - s, y); ctx.closePath();
+  if (fill) { ctx.fillStyle = fill; ctx.fill(); } else { ctx.strokeStyle = stroke; ctx.lineWidth = 2; ctx.stroke(); }
+}
+function disc(x, y, r) { ctx.beginPath(); ctx.arc(x, y, r, 0, TAU); }
+function drawHUD() {
+  const S = G.S, touch = touchMode, small = VW < 600;
+  const x0 = INS.l + 12, y0 = INS.t + 10, xr = VW - INS.r - 12 - (touch ? 50 : 0);
+  const cx = VW / 2 + (INS.l - INS.r) / 2, left = G.boss ? G.len : Math.max(0, G.len - G.t);
+  ctx.textBaseline = 'alphabetic';
+
+  // ── 左上：关卡、生命、霜壳 ──
+  ctx.textAlign = 'left'; ctx.fillStyle = '#fff1e6'; ctx.font = TTL(small ? 22 : 26);
+  const rt = `${G.ch}-${G.round}`; ctx.fillText(rt, x0, y0 + 22);
+  const tw = ctx.measureText(rt).width;
+  if (G.round === 2) hudTag('骤增', x0 + tw + 8, y0 + 18, '#f0304a', '#120807');
+  // 经验条：贴着屏幕最上沿
+  const xk = Math.min(1, G.xp / xpNeed(G.lv));
+  ctx.fillStyle = '#0e1a20'; ctx.fillRect(0, INS.t, VW, 4);
+  ctx.fillStyle = '#8bebff'; ctx.fillRect(0, INS.t, VW * xk, 4);
+  let lx = x0 + 7; const ly = y0 + 40;
+  for (let i = 0; i < P.maxHp; i++, lx += 18) diamond(lx, ly, 7, i < P.hp ? '#8bebff' : null, '#2e5f72');
+  lx += 4;
+  ctx.globalAlpha = P.shield ? 1 : .35; drawIcon('shell', lx, ly, 16, '#eafbff', 2.4); ctx.globalAlpha = 1;
+  if (!P.shield) {
+    const k = 1 - P.shieldT / (S.shieldRegen * S.shieldRegenMul);
+    ctx.strokeStyle = '#8bebff'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(lx, ly, 11, -1.57, -1.57 + k * TAU); ctx.stroke();
+  }
+  let lw2 = hudTag(`Lv ${G.lv}`, x0, ly + 24, '#8bebff', '#06151b');
+  if (G.devil.revive) lw2 += hudTag(`复苏 ×${G.devil.revive}`, x0 + lw2 + 4, ly + 24, '#ff4fd8', '#120807') + 4;
+  if (G.pendingLv) hudTag(`技能点 +${G.pendingLv}`, x0 + lw2 + 4, ly + 24, '#ffd24a', '#120807');
+  // 生效中的效果
+  let iy = y0 + 88;
+  const BUFFNAME = { prism: ['i_prism', ITEMS.prism.name], spikes: ['i_spikes', ITEMS.spikes.name], hourglass: ['i_hourglass', ITEMS.hourglass.name],
+    mirror: ['mirror', CONS.mirror.name], step: ['step', CONS.step.name], clock: ['clock', CONS.clock.name] };
+  for (const k in P.buffs) {
+    const I = BUFFNAME[k];
+    if (P.buffs[k] <= 0 || !I) continue;
+    drawIcon(I[0], x0 + 7, iy - 4, 14, '#8bebff', 2.2);
+    ctx.fillStyle = '#bff6ff'; ctx.font = FONT(12); ctx.textAlign = 'left'; ctx.fillText(`${I[1]} ${P.buffs[k].toFixed(1)}s`, x0 + 18, iy);
+    iy += 18;
+  }
+
+  // ── 中间：倒计时与进度条 ──
+  ctx.textAlign = 'center'; ctx.font = NUM(small ? 30 : 38); ctx.fillStyle = left < 5 ? '#ff5a1f' : '#fff1e6';
+  ctx.fillText(G.boss ? 'BOSS' : left.toFixed(1), cx, y0 + 30);
+  const bw = Math.min(small ? 130 : 320, VW * .4), by = y0 + 40;
+  ctx.fillStyle = '#2a1410'; ctx.fillRect(cx - bw / 2, by, bw, 5);
+  ctx.fillStyle = left < 10 ? '#ffb020' : '#8bebff'; ctx.fillRect(cx - bw / 2, by, bw * left / G.len, 5);
+  let ty = by + 22;
+
+  // ── Boss 热量条 ──
+  if (G.boss) {
+    const B = G.boss, k = B.heat / B.max, pw = Math.min(380, VW - INS.l - INS.r - 24), px = cx - pw / 2, ph = 46;
+    ctx.globalAlpha = .88; ctx.fillStyle = '#2a0c08'; ctx.fillRect(px, ty - 6, pw, ph);
+    ctx.globalAlpha = 1; ctx.strokeStyle = '#7a2410'; ctx.lineWidth = 1; ctx.strokeRect(px + .5, ty - 5.5, pw - 1, ph - 1);
+    ctx.textAlign = 'left'; ctx.fillStyle = '#fff1e6'; ctx.font = TTL(18); ctx.fillText(B.name, px + 10, ty + 13);
+    ctx.textAlign = 'right'; ctx.font = FONT(11); ctx.fillStyle = B.cooled ? '#8bebff' : '#ffb020';
+    ctx.fillText(B.cooled ? '已冷却' : `第 ${B.unit.phase || 1} 阶段`, px + pw - 10, ty + 12);
+    const hx = px + 10, hy = ty + 20, hw = pw - 20;
+    ctx.fillStyle = '#120807'; ctx.fillRect(hx, hy, hw, 13);
+    ctx.fillStyle = k < .15 ? '#bff3ff' : '#ff5a1f'; ctx.fillRect(hx, hy, hw * k, 13);
+    ctx.fillStyle = '#fff1e6';
+    for (const m of [.65, B.kind === 'eye' ? .35 : .3]) ctx.fillRect(hx + hw * m - 1, hy - 3, 2, 19);
+    ctx.textAlign = 'right'; ctx.font = NUM(11); ctx.fillStyle = '#ffd7c2';
+    ctx.fillText(`热量 ${Math.ceil(B.heat * 10)} / ${Math.round(B.max * 10)}`, hx + hw - 4, hy + 10.5);
+    ty += ph + 10;
+  }
+
+  // ── 中间提示：信标、余寒、关卡横幅 ──
+  ctx.textAlign = 'center';
+  if (G.banner) {
+    const a = Math.min(1, G.banner.t / .5), f1 = FONT(small ? 17 : 21), f2 = FONT(12.5);
+    ctx.font = f1; const w1 = ctx.measureText(G.banner.title).width; ctx.font = f2; const w2 = ctx.measureText(G.banner.sub).width;
+    const w = Math.min(VW - 24, Math.max(w1, w2) + 32);
+    ctx.globalAlpha = a * .88; ctx.fillStyle = '#120807'; ctx.fillRect(cx - w / 2, ty - 6, w, 54);
+    ctx.globalAlpha = a; ctx.fillStyle = G.banner.c; ctx.fillRect(cx - w / 2, ty - 6, w, 3);
+    ctx.font = f1; ctx.fillText(G.banner.title, cx, ty + 18);
+    ctx.fillStyle = '#ffd7c2'; ctx.font = f2; ctx.fillText(G.banner.sub, cx, ty + 39); ctx.globalAlpha = 1;
+  } else if (G.round === 1 && G.t < 7) {
+    ctx.globalAlpha = Math.min(1, (7 - G.t) / 1.5) * .85; ctx.fillStyle = '#ffd7c2'; ctx.font = FONT(13);
+    ctx.fillText('按住拖动走位，快速点两下冲刺', cx, ty + 4);
+    ctx.fillText('手指停住不滑 → 火力翻倍', cx, ty + 24);
+    ctx.globalAlpha = 1;
+  }
+
+  // ── 右上：本关收入、威胁、擦弹连击 ──
+  ctx.textAlign = 'right';
+  const earn = '' + G.coins;
+  ctx.font = NUM(small ? 20 : 24); ctx.fillStyle = '#ffd24a'; ctx.fillText(earn, xr, y0 + 22);
+  const ew = ctx.measureText(earn).width;
+  ctx.fillStyle = '#ffd24a'; disc(xr - ew - 11, y0 + 15, 7); ctx.fill();
+  ctx.strokeStyle = '#c99a1a'; ctx.lineWidth = 1.5; disc(xr - ew - 11, y0 + 15, 4); ctx.stroke();
+  ctx.font = FONT(11); ctx.fillStyle = '#c2a193';
+  ctx.fillText(`击杀 ${G.kills.toLocaleString()}`, xr, y0 + 38);
+  if (G.combo > 4) {
+    const c = Math.min(Math.sqrt(G.combo) * 1.4, 12);
+    ctx.globalAlpha = Math.min(1, G.comboT * 1.5); ctx.fillStyle = G.combo >= 100 ? '#ffd24a' : G.combo >= 30 ? '#ffb020' : '#8bebff';
+    ctx.font = NUM(14 + c); ctx.fillText(`连杀 ×${G.combo}`, xr, (G.banner ? ty + 70 : G.boss ? ty + 12 : y0 + 62) + c / 2);
+    ctx.globalAlpha = 1;
+  }
+
+  // ── 冲刺与道具 ──
+  const cdMax = DASH_CD * (1 - S.dashCdRed), cdk = P.dashCdT > 0 ? 1 - P.dashCdT / cdMax : 1;
+  if (touch) {
+    const b = touchBtns()[0];
+    ctx.globalAlpha = .9; ctx.fillStyle = '#1c0e0b'; ctx.fillRect(b.x - 22, b.y - 22, 44, 44);
+    ctx.strokeStyle = '#3d241c'; ctx.lineWidth = 1; ctx.strokeRect(b.x - 21.5, b.y - 21.5, 43, 43);
+    ctx.globalAlpha = 1; ctx.fillStyle = '#fff1e6'; ctx.fillRect(b.x - 6, b.y - 7, 4, 14); ctx.fillRect(b.x + 2, b.y - 7, 4, 14);
+    // 冲刺冷却：小冰块脚下一圈，转满就能双击冲刺
+    const px = OX + P.x * SC, py = OY + P.y * SC, pr2 = P.r * SC * 2.6;
+    ctx.lineWidth = 3; ctx.strokeStyle = '#8bebff';
+    ctx.globalAlpha = cdk >= 1 ? .55 + .2 * Math.sin(G.time * 6) : .35;
+    ctx.beginPath(); ctx.arc(px, py, pr2, -1.57, -1.57 + cdk * TAU); ctx.stroke(); ctx.globalAlpha = 1;
+    // 底部一行：左边背包（自动使用，只显示），右边冲刺状态
+    const yb = VH - INS.b - 22;
+    let bx = INS.l + 20;
+    for (let i = 0; i < 3; i++, bx += 34) {
+      const sl = G.inv[i];
+      if (sl) {
+        const c = sl.k === 'zero' ? '#ff4fd8' : '#8bebff';
+        ctx.globalAlpha = sl.k === 'zero' && G.zeroUsed ? .4 : .9; ctx.fillStyle = '#0e1a20'; disc(bx, yb, 14); ctx.fill();
+        ctx.strokeStyle = c; ctx.lineWidth = 1.5; ctx.stroke(); drawIcon(sl.k, bx, yb, 16, c, 2);
+        ctx.fillStyle = c; ctx.font = NUM(10); ctx.textAlign = 'center'; ctx.fillText(sl.n, bx + 11, yb - 8);
+      } else { ctx.globalAlpha = .4; ctx.strokeStyle = '#5a3a30'; ctx.lineWidth = 1.5; ctx.setLineDash([3, 3]); disc(bx, yb, 14); ctx.stroke(); ctx.setLineDash([]); }
+      ctx.globalAlpha = 1;
+    }
+    ctx.textAlign = 'right'; ctx.font = FONT(12);
+    ctx.fillStyle = cdk >= 1 ? '#8bebff' : '#5a7a86';
+    ctx.fillText(cdk >= 1 ? '双击屏幕 · 冲刺' : `冲刺冷却 ${P.dashCdT.toFixed(1)}s`, VW - INS.r - 16, yb + 4);
+    // 摇杆：按下处出现；手机竖屏时左下常驻一个淡淡的位置提示
+    const drawJoy = (ox, oy, kx, ky, a) => {
+      ctx.globalAlpha = .75 * a; ctx.fillStyle = '#1c0e0b'; disc(ox, oy, JOY_R); ctx.fill();
+      ctx.strokeStyle = '#5a3a30'; ctx.lineWidth = 2; ctx.stroke();
+      ctx.globalAlpha = .85 * a; ctx.fillStyle = '#8bebff'; disc(kx, ky, 20); ctx.fill(); ctx.globalAlpha = 1;
+    };
+    if (joy && joy.drag) {
+      // 拖动跟手：手指下面一个小冰环，表示触摸已被识别
+      ctx.globalAlpha = .45; ctx.strokeStyle = '#8bebff'; ctx.lineWidth = 2; disc(joy.x, joy.y, 26); ctx.stroke(); ctx.globalAlpha = 1;
+    } else if (joy) {
+      const jx = joy.x - joy.ox, jy = joy.y - joy.oy, d = Math.hypot(jx, jy), m = Math.min(d, JOY_R) / (d || 1);
+      drawJoy(joy.ox, joy.oy, joy.ox + jx * m, joy.oy + jy * m, 1);
+    } else if (!settings.drag && (CTLB || (G.round === 1 && G.t < 8))) {
+      const ox = INS.l + 76, oy = VH - INS.b - 76;
+      drawJoy(ox, oy, ox, oy, .4);
+    }
+    if (!joy && G.round === 1 && G.t < 8 && false) {
+      ctx.globalAlpha = Math.min(1, (8 - G.t) / 1.5); ctx.fillStyle = '#ffd7c2'; ctx.font = FONT(12); ctx.textAlign = 'left';
+      ctx.fillText(settings.drag ? '在空白处按住滑动，小冰块跟着手指走' : '按住任意处拖动摇杆', INS.l + 14, VH - INS.b - 20); ctx.globalAlpha = 1;
+    }
+  } else {
+    // 电脑：左下冲刺环，底部中间 Q/E/R 三格
+    const dx = INS.l + 48, dy = VH - INS.b - 48;
+    ctx.globalAlpha = .85; ctx.fillStyle = '#0e1a20'; disc(dx, dy, 32); ctx.fill();
+    ctx.globalAlpha = 1; ctx.strokeStyle = '#2e5f72'; ctx.lineWidth = 2; ctx.stroke();
+    ctx.strokeStyle = '#8bebff'; ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(dx, dy, 30, -1.57, -1.57 + cdk * TAU); ctx.stroke();
+    ctx.textAlign = 'center'; ctx.fillStyle = cdk >= 1 ? '#fff1e6' : '#8c6e62'; ctx.font = FONT(12); ctx.fillText('冲刺', dx, dy + 1);
+    ctx.fillStyle = '#9fd3e2'; ctx.font = NUM(10); ctx.fillText('空格', dx, dy + 15);
+    const sw = 92, sh = 66, gap = 10, sx0 = cx - (3 * sw + 2 * gap) / 2, sy = VH - INS.b - 16 - sh;
+    for (let i = 0; i < 3; i++) {
+      const x = sx0 + i * (sw + gap), s = G.inv[i];
+      if (s) {
+        const c = s.k === 'zero' ? '#ff4fd8' : '#8bebff', locked = s.k === 'zero' && G.zeroUsed;
+        ctx.globalAlpha = locked ? .4 : .88; ctx.fillStyle = '#0e1a20'; ctx.fillRect(x, sy, sw, sh);
+        ctx.strokeStyle = c; ctx.lineWidth = 2; ctx.strokeRect(x + 1, sy + 1, sw - 2, sh - 2);
+        ctx.fillStyle = c; ctx.fillRect(x, sy, 18, 16);
+        ctx.fillStyle = '#06151b'; ctx.textAlign = 'center'; ctx.font = NUM(11); ctx.fillText(SLOT_KEYS[i], x + 9, sy + 12);
+        drawIcon(s.k, x + sw / 2, sy + 26, 24, c, 2);
+        ctx.fillStyle = '#fff1e6'; ctx.font = FONT(11); ctx.fillText(CONS[s.k].name, x + sw / 2, sy + 56);
+        ctx.textAlign = 'right'; ctx.fillStyle = c; ctx.font = NUM(12); ctx.fillText('×' + s.n, x + sw - 6, sy + 14);
+      } else {
+        ctx.globalAlpha = .7; ctx.setLineDash([5, 4]); ctx.strokeStyle = '#5a3a30'; ctx.lineWidth = 2; ctx.strokeRect(x + 1, sy + 1, sw - 2, sh - 2); ctx.setLineDash([]);
+        ctx.fillStyle = '#3d241c'; ctx.fillRect(x, sy, 18, 16);
+        ctx.fillStyle = '#c2a193'; ctx.textAlign = 'center'; ctx.font = NUM(11); ctx.fillText(SLOT_KEYS[i], x + 9, sy + 12);
+        ctx.fillStyle = '#8c6e62'; ctx.font = FONT(11); ctx.fillText('空', x + sw / 2, sy + 38);
+      }
+      ctx.globalAlpha = 1;
+    }
+  }
+}
+// 标题画面背景：漂浮的火苗
+const attract = Array.from({ length: 26 }, () => ({ x: Math.random(), y: Math.random(), vx: rand(-.02, .02), vy: rand(-.05, -.01), r: rand(8, 16), seed: Math.random() * 10 }));
+function drawAttract() {
+  G = { time: performance.now() / 1000 };
+  for (const a of attract) {
+    a.x = (a.x + a.vx / 60 + 1) % 1; a.y = (a.y + a.vy / 60 + 1) % 1;
+    ctx.globalAlpha = .45; flame(a.x * VW, a.y * VH, a.r, -Math.PI / 2, FLAME.ember, a.seed);
+  }
+  G = null; ctx.globalAlpha = 1;
+}
+
+// ───────── 界面 ─────────
+function showScreen(id) { for (const s of ['s-title', 's-pause', 's-up', 's-devil', 's-meta', 's-shop', 's-dead']) $(s).classList.toggle('on', s === id); }
+function start() { audioInit(); joy = null; keys.clear(); newGame(); }
+function pause() { G.state = 'pause'; joy = null; showScreen('s-pause'); }
+function resume() { G.state = 'play'; showScreen(null); }
+function showUpgrade() {
+  upShownAt = performance.now();
+  $('u-kick').textContent = G.opening ? '开局先拿技能' : `${G.ch}-${G.round} 完成`;
+  $('u-title').textContent = `选 ${G.need} 个技能`;
+  $('u-total').style.display = 'none';
+  $('u-earn').style.display = G.opening || G.need > 2 ? 'none' : '';
+  $('u-earn').innerHTML = `<div><b>${G.kills.toLocaleString()}</b><span>击杀</span></div><div><b>${G.maxCombo}</b><span>最高连杀</span></div><div><b>${G.coins}</b><span>金币</span></div>`;
+  $('u-bonus').textContent = '点卡片自己选，或者直接按下面的按钮';
+  $('u-bonus').style.display = G.offers.length > 4 ? 'none' : '';
+  $('u-odds').innerHTML = '';
+  $('u-cards').classList.toggle('dense', G.offers.length > 4);
+  renderCards();
+  showScreen('s-up');
+}
+function renderCards() {
+  $('u-cards').innerHTML = G.offers.map((f, i) => {
+    if (f.evo) {
+      const E = EVO[f.evo], on = upPick.includes(i);
+      return `<button type="button" class="card${on ? ' sel' : ''}" aria-pressed="${on}" data-i="${i}"
+        style="--qc:#FFD24A;--qb:#2A1C06;--ql:#FFD24A;--ql2:#FFD24A;--sc:#FFD24A">
+        <span class="cic">${svgIcon(E.icon)}</span>
+        <span class="cbody"><span class="crow"><b class="cname">${E.name}</b><span class="chip">进化</span></span>
+        <span class="ctext">${E.text.replace(/[+\-]?\d+%?/g, m => `<b>${m}</b>`)}</span>
+        <span class="ccost" style="color:var(--gold)">${CARD[E.a].name} + ${CARD[E.b].name}</span></span></button>`;
+    }
+    const hint = evoHint(f.id), c = CARD[f.id], st = QSTYLE[f.from >= 0 ? 0 : 1], v = c.val(f.L), on = upPick.includes(i);
+    const txt = c.text(v, f.L).replace(/[+\-]?\d+(\.\d+)?%?/g, m => `<b>${m}</b>`);
+    return `<button type="button" class="card${on ? ' sel' : ''}" aria-pressed="${on}" data-i="${i}"
+      style="--qc:${st.b};--qb:${st.bg};--ql:${st.l};--ql2:${st.v};--sc:${SCHOOL_C[c.school]}">
+      <span class="cic">${svgIcon('c_' + c.id)}</span>
+      <span class="cbody">
+        <span class="crow"><b class="cname">${c.name}</b><span class="chip">${c.school}</span><span class="cq">${f.from >= 0 ? `Lv ${LV[f.L]}` : '新'}</span></span>
+        <span class="ctext">${txt}</span>${hint ? `<span class="ccost" style="color:var(--gold)">${hint}</span>` : ''}
+      </span></button>`;
+  }).join('') || '<div class="none">所有技能都满级了</div>';
+  $('u-cards').querySelectorAll('.card').forEach(el => el.onclick = () => pick(+el.dataset.i));
+  const left = G.need - upPick.length, next = G.pendingLv > 0 ? '继续选' : G.afterUp === 'shop' ? '下一步' : '开打';
+  $('b-pick').textContent = !G.offers.length ? next : !left ? `拿走 ${G.need} 个 → ${next}` : upPick.length ? `帮我选剩下 ${left} 个` : `帮我选 ${left} 个`;
+  const rb = $('b-reroll'); rb.innerHTML = `重抽<small>剩 ${G.rerolls} 次</small>`; rb.disabled = G.rerolls <= 0;
+}
+function badge() {
+  if (G.won) return `${chName(G.ch)}征服者`;
+  if (G.round === 2 && G.ch === 1) return '第二关受害者';
+  if (G.kills >= 5000) return '人形割草机';
+  if (G.maxCombo >= 300) return '连杀狂魔';
+  if (G.ch >= 3) return '火海老兵';
+  if (G.kills >= 1000) return '千火斩';
+  return '勇敢的小冰块';
+}
+// 一局结束：记录纪录，发寒晶。第一次通关某章有额外奖励
+function settle(win) {
+  const nr = { kills: G.kills > records.kills, combo: G.maxCombo > records.combo };
+  records.kills = Math.max(records.kills, G.kills); records.combo = Math.max(records.combo, G.maxCombo);
+  if (G.round === 2) records.r2deaths++;
+  store.set(REC_KEY, records);
+  const first = win && G.ch >= meta.unlocked;
+  G.gain = Math.floor((G.kills / 20 + (G.round - 1) * 4 + (win ? 40 + 20 * (G.ch - 1) : 0) + (first ? 60 : 0)) * (1 + .25 * (G.ch - 1)));
+  meta.shards += G.gain;
+  if (first) meta.unlocked = G.ch + 1;
+  store.set(META_KEY, meta);
+  return nr;
+}
+function die() {
+  G.state = 'dead'; G.deadT = 0;
+  G.missBy = G.boss ? 0 : Math.max(0, G.len - G.t);
+  sfx.die(); buzz(150, true); burst(P.x, P.y, 70, COL.player, 380, 1.2, 3.5); burst(P.x, P.y, 40, '#ffffff', 200, 1.4, 2.5);
+  const nr = settle(false);
+  setTimeout(() => showDead(nr), 900);
+}
+function win() {
+  G.won = true; G.state = 'dead'; G.deadT = 0; G.missBy = 0;
+  const nr = settle(true);
+  chSel = Math.min(meta.unlocked, G.ch + 1);
+  sfx.levelUp();
+  setTimeout(() => showDead(nr), 500);
+}
+function showDead(nr) {
+  const b = badge();
+  $('d-title').textContent = G.won ? `第 ${G.ch} 章通关！` : '化掉了';
+  document.querySelector('.melt svg').style.display = G.won ? 'none' : '';
+  $('d-badge').textContent = `称号「${b}」`;
+  $('d-miss').innerHTML = G.boss && !G.won ? `<span>Boss 还剩</span><b>${Math.ceil(G.boss.heat / G.boss.max * 100)}<small> %</small></b>`
+    : G.missBy > 0 ? `<span>离 ${G.ch}-${G.round} 结束${G.missBy < 10 ? '只' : '还'}差</span><b>${G.missBy.toFixed(1)}<small> 秒</small></b>` : '';
+  $('d-gain').textContent = `获得寒晶 +${G.gain}，现有 ${meta.shards}，回标题页可升级`;
+  $('d-stats').innerHTML = [['到达', `${G.ch}-${G.round}`, 'var(--ink)'], ['击杀', G.kills.toLocaleString(), 'var(--fire)'],
+    ['最高连杀', G.maxCombo, 'var(--ice)'], ['等级', `Lv ${G.lv}`, 'var(--gold)']]
+    .map(([l, v, c]) => `<div><span>${l}</span><b style="color:${c}">${v}</b></div>`).join('');
+  const tags = [nr.kills && '击杀', nr.combo && '连杀'].filter(Boolean);
+  $('d-rec').textContent = tags.length ? `新纪录：${tags.join('、')}！` : `最佳纪录：击杀 ${records.kills.toLocaleString()} · 连杀 ${records.combo}`;
+  $('d-build').innerHTML = Object.entries(G.owned).map(([id, o]) => `<span style="--qc:${QSTYLE[1].b};--ql:${QSTYLE[1].l}">${CARD[id].name} ${LV[o.L]}</span>`).join('')
+    + Object.keys(G.evo).map(k => `<span style="--qc:#FFD24A;--ql:#FFD24A">${EVO[k].name}</span>`).join('')
+    + Object.keys(G.devil).map(k => `<span style="--qc:#FF4FD8;--ql:#FF4FD8">${DEVIL[k].name}</span>`).join('')
+    || '<span style="--qc:var(--line2);--ql:var(--dim)">没有获得技能</span>';
+  $('d-share').value = G.won ? `我通关了《疯狂火世界·割草版》第 ${G.ch} 章，打碎了 ${G.kills} 只火焰，最高连杀 ${G.maxCombo}。你来试试！`
+    : `我在《疯狂火世界·割草版》倒在了 ${G.ch}-${G.round}，打碎了 ${G.kills} 只火焰，称号「${b}」。你来，你也割不完第二关！`;
+  $('b-copy').textContent = '复制战绩';
+  $('b-again').textContent = G.won && chSel > G.ch ? `进入第 ${chSel} 章` : '再来一局';
+  showScreen('s-dead');
+}
+function renderMeta() {
+  $('m-shards').textContent = `寒晶 ${meta.shards}`;
+  $('m-list').innerHTML = Object.keys(META).map(k => {
+    const M = META[k], n = meta.ups[k], max = M.prices.length, price = M.prices[n], full = n >= max;
+    return `<div class="shelf" style="--sc:#8BEBFF"><div class="srow">${svgIcon(M.ic)}<span class="stag">${n}/${max}</span></div>
+      <b class="sname">${M.name}</b><span class="sdesc">${M.desc}</span>
+      <button type="button" class="buy${full ? ' sold' : ''}" data-k="${k}"${full || meta.shards < price ? ' disabled' : ''}>${full ? '已满级' : meta.shards < price ? `${price} · 差 ${price - meta.shards}` : price}</button></div>`;
+  }).join('');
+  document.querySelectorAll('#m-list .buy').forEach(b => b.onclick = () => {
+    const k = b.dataset.k, price = META[k].prices[meta.ups[k]];
+    if (price == null || meta.shards < price) return;
+    meta.shards -= price; meta.ups[k]++; store.set(META_KEY, meta); audioInit(); sfx.coin(); renderMeta();
+  });
+}
+function refreshTitle() {
+  const R = records;
+  $('t-rec').innerHTML = R.runs
+    ? `<div class="t-recs"><div><b style="color:var(--fire)">${R.r2deaths} 次</b><span>倒在第二关</span></div><div><b style="color:var(--ice)">${meta.unlocked - 1} 章</b><span>已通关</span></div><div><b style="color:var(--gold)">${R.kills.toLocaleString()}</b><span>最多击杀</span></div></div>`
+    : '<div class="t-first">第一次来？冰锥会自动发射，你只管走位。</div>';
+  $('t-ch').innerHTML = `第 ${chSel} 章 · ${chName(chSel)}<small>共 5 关，最后是 Boss</small>`;
+  $('b-chp').disabled = chSel <= 1; $('b-chn').disabled = chSel >= meta.unlocked;
+  $('b-start').textContent = `开始第 ${chSel} 章`;
+  $('b-meta').innerHTML = `冰窖升级<br>寒晶 ${meta.shards}`;
+}
+function toggleSet(k) {
+  settings[k] = !settings[k]; store.set('xc_settings', settings); refreshSet();
+  if (k === 'vibe') buzz(30, true);
+  if (master) master.gain.value = settings.mute ? 0 : .45;
+  if (musicGain) musicGain.gain.value = settings.music ? .32 : 0;
+}
+const SETS = { mute: ['音效', 'sound'], music: ['音乐', 'music'], lowfx: ['低特效', 'lowfx'], vibe: ['震动', 'vibe'] };
+function refreshSet() {
+  document.querySelectorAll('[data-set]').forEach(b => {
+    const k = b.dataset.set;
+    if (k === 'drag') {
+      // 操作方式：拖动跟手 / 摇杆，两种都是“开”的样子，只换图标和文字
+      const t = settings.drag ? '拖动跟手' : '摇杆';
+      b.classList.add('on'); b.classList.remove('off');
+      b.setAttribute('aria-label', `操作方式：${t}，点击切换`);
+      b.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${ICON[settings.drag ? 'drag' : 'stick']}"/></svg><span>操作：${t}</span>`;
+      return;
+    }
+    const on = k === 'mute' ? !settings.mute : settings[k], [label, ic] = SETS[k];
+    b.classList.toggle('on', on); b.classList.toggle('off', !on);
+    b.setAttribute('aria-pressed', on); b.setAttribute('aria-label', `${label}：${on ? '开' : '关'}`);
+    b.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${ICON[ic]}"/>${on || k === 'lowfx' ? '' : '<path d="M4 4l16 16"/>'}</svg><span>${label} ${on ? '开' : '关'}</span>`;
+  });
+}
+document.querySelectorAll('[data-set]').forEach(b => b.onclick = () => { audioInit(); toggleSet(b.dataset.set); });
+$('b-start').onclick = start;
+$('b-again').onclick = start;
+$('b-resume').onclick = resume;
+$('b-reroll').onclick = reroll;
+$('b-pick').onclick = () => confirmPicks();
+$('b-refresh').onclick = refreshShop;
+$('b-go').onclick = leaveShop;
+$('b-auto').onclick = autoBuy;
+$('b-chp').onclick = () => { chSel = Math.max(1, chSel - 1); refreshTitle(); };
+$('b-chn').onclick = () => { chSel = Math.min(meta.unlocked, chSel + 1); refreshTitle(); };
+$('b-meta').onclick = () => { renderMeta(); showScreen('s-meta'); };
+$('b-meta-back').onclick = () => { refreshTitle(); showScreen('s-title'); };
+$('b-devil-yes').onclick = () => devilDeal(devilSel);
+$('b-devil-no').onclick = () => { if (G.state === 'devil') { sfx.pick(); openShop(); } };
+$('b-quit').onclick = () => { G = null; refreshTitle(); showScreen('s-title'); };
+$('b-copy').onclick = () => {
+  const ta = $('d-share');
+  const done = () => { $('b-copy').textContent = '已复制'; };
+  const fallback = () => { ta.focus(); ta.select(); $('b-copy').textContent = '已选中，请手动复制'; };
+  try { navigator.clipboard.writeText(ta.value).then(done, fallback); } catch (e) { fallback(); }
+};
+
+// ───────── 主循环 ─────────
+let last = performance.now();
+function frame(now) {
+  // 先排下一帧：就算这一帧出错，游戏也不会整个卡死
+  requestAnimationFrame(frame);
+  const ms = now - last, rdt = Math.min(.05, ms / 1000); last = now;
+  qualityTick(ms);
+  if (G) update(rdt);
+  render();
+}
+addEventListener('resize', resize);
+if (!canVibe) document.querySelectorAll('[data-set="vibe"]').forEach(b => { b.style.display = 'none'; });
+resize(); refreshSet(); refreshTitle();
+requestAnimationFrame(frame);
+// 调试入口：控制台里可查看状态、直接跳关、加金币
+window.__fw = {
+  get G() { return G; }, get P() { return P; }, get enemies() { return enemies; }, get sparks() { return sparks; },
+  get grounds() { return grounds; }, get items() { return items; }, get shells() { return shells; }, get warns() { return warns; },
+  get gems() { return gems; }, get bolts() { return bolts; }, get W() { return W; }, get H() { return H; },
+  get meta() { return meta; }, set ch(v) { chSel = v; refreshTitle(); },
+  jump(r) { G.round = r - 1; nextRound(); }, spawnItem, coins(n) { G.coins += n; },
+  build(o, e) { G.owned = o; G.evo = e || {}; recomputeStats(); }, get ql() { return QL; }, get voices() { return voices; },
+  set touch(v) { touchMode = v; resize(); }
+};
+</script>
+</body>
+</html>

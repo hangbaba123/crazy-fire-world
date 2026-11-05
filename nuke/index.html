@@ -1,0 +1,836 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#120807">
+<title>一指核爆</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=ZCOOL+QingKe+HuangYou&family=Chakra+Petch:wght@500;700&display=swap" media="print" onload="this.media='all'">
+<style>
+  :root{--bg:#120807;--bg2:#1C0E0B;--line:#3D241C;--ink:#FFF1E6;--dim:#C2A193;--ice:#8BEBFF;--iceInk:#06151B;--panel:#0E1A20;--panelLine:#2E5F72;
+    --fire:#FF5A1F;--amber:#FFB020;--gold:#FFD24A;--mag:#FF4FD8;
+    --f-title:"ZCOOL QingKe HuangYou","PingFang SC","Microsoft YaHei",sans-serif;
+    --f-num:"Chakra Petch",ui-monospace,system-ui,sans-serif}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none;user-select:none;-webkit-user-select:none}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);overflow:hidden;overscroll-behavior:none;font-family:system-ui,"PingFang SC","Microsoft YaHei",sans-serif}
+  canvas{position:fixed;inset:0;touch-action:none;display:block}
+  button{font:inherit;color:inherit;border:0;border-radius:0;cursor:pointer;touch-action:manipulation}
+  #probe{position:fixed;visibility:hidden;padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px)}
+  #tools{position:fixed;top:calc(env(safe-area-inset-top,0px) + 8px);right:calc(env(safe-area-inset-right,0px) + 8px);display:flex;gap:6px;z-index:3}
+  #tools button{width:36px;height:36px;background:var(--bg2);border:1px solid var(--line);color:var(--ice);font-size:13px;font-weight:700}
+  #tools button.off{color:#5a4a44}
+  .ov{position:fixed;inset:0;z-index:2;display:none;flex-direction:column;justify-content:center;gap:12px;background:rgba(18,8,7,.86);
+    padding:calc(env(safe-area-inset-top,0px) + 16px) max(16px,env(safe-area-inset-right,0px)) calc(env(safe-area-inset-bottom,0px) + 16px) max(16px,env(safe-area-inset-left,0px))}
+  .ov.on{display:flex}
+  .ov h2{margin:0;font-family:var(--f-title);font-weight:400;font-size:34px;color:var(--ice)}
+  .ov p{margin:0;font-size:14px;color:var(--dim)}
+  .card{display:flex;flex-direction:column;gap:4px;text-align:left;padding:14px;background:var(--bg2);border:2px solid var(--gold)}
+  .card b{font-size:19px}
+  .card i{font-style:normal;font-size:14px;color:var(--dim);line-height:1.4}
+  #over h2{font-size:48px;color:var(--fire)}
+  .stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .stats div{background:var(--bg2);padding:10px 12px}
+  .stats span{display:block;font-size:12px;color:var(--dim)}
+  .stats b{font-family:var(--f-num);font-size:26px;color:var(--gold)}
+  #o-new{color:var(--gold);font-weight:700}
+  #b-again{height:64px;background:var(--fire);color:#120807;font-family:var(--f-title);font-size:26px}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="probe"></div>
+<div id="tools"><button id="b-snd" aria-label="声音开关">声</button><button id="b-vib" aria-label="震动开关">震</button></div>
+<div id="pick" class="ov"><h2 id="p-title"></h2><p>点一张，马上生效</p><div id="p-cards" style="display:flex;flex-direction:column;gap:10px"></div></div>
+<div id="over" class="ov">
+  <h2>化掉了</h2>
+  <p id="o-why"></p>
+  <div class="stats" id="o-stats"></div>
+  <p id="o-new"></p>
+  <button id="b-again">再守一次</button>
+</div>
+<script>
+'use strict';
+const $ = id => document.getElementById(id);
+const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
+const rand = (a, b) => a + Math.random() * (b - a);
+const irand = n => Math.floor(Math.random() * n);
+const TAU = Math.PI * 2;
+const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = irand(i + 1); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const store = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+};
+const SAVE_KEY = 'fw_nuke2';
+const save = Object.assign({ bestWave: 0, bestChain: 0, bestScore: 0, runs: 0, snd: true, vib: true }, store.get(SAVE_KEY, {}));
+const persist = () => store.set(SAVE_KEY, save);
+
+// ───────── 局内升级：每 2 波三选一，死了就清零，所以不存在“买满” ─────────
+const UPS = {
+  radius: { name: '扩爆', text: '爆炸范围 +12%，连锁能跨过更大的缺口', max: 6, apply: () => { S.R *= 1.12; } },
+  charge: { name: '速充', text: '充能时间 -12%', max: 6, apply: () => { S.chargeT *= .88; } },
+  refund: { name: '回能', text: '连锁返还的充能 +50%', max: 5, apply: () => { S.refund *= 1.5; } },
+  store:  { name: '蓄能槽', text: '多存 1 发，可以连着炸', max: 2, apply: () => { S.store++; } },
+  hold:   { name: '蓄力强化', text: '蓄满的爆炸范围更大', max: 3, apply: () => { S.hold += .5; } },
+  push:   { name: '冲击波', text: '连锁把火海推回去的距离 +50%', max: 4, apply: () => { S.push *= 1.5; } },
+  slow:   { name: '寒潮', text: '火海推进速度 -8%', max: 4, apply: () => { S.slow *= .92; } },
+  hp:     { name: '补冰', text: '恢复 1 点生命', max: 9, apply: () => { hp = Math.min(hp + 1, 5); }, ok: () => hp < 5 },
+  pierce: { name: '破甲', text: '每次爆炸多打掉硬壳和火核 1 层', max: 2, apply: () => { S.pierce++; } },
+  burn:   { name: '余烬引燃', text: '灰色余烬也会传火，不再截断连锁', max: 1, apply: () => { S.burn = true; } },
+  gold:   { name: '金火苗', text: '金火苗变多：炸到它们立刻回 30% 充能', max: 3, apply: () => { S.gold += .03; } }
+};
+let S;
+const baseS = () => ({ R: 36, chargeT: 2.1, refund: 1, store: 1, hold: 1.5, push: 1, slow: 1, gold: .05, pierce: 1, burn: false });
+
+// ───────── 画布 ─────────
+const cv = $('c'); const ctx = cv.getContext('2d', { alpha: false });
+let VW = 0, VH = 0, DPR = 1, INS = { t: 0, r: 0, b: 0, l: 0 }, QL = 0, LINE = 0, bg = null, sprites = null;
+const QCAP = [2, 1.5, 1];
+function resize() {
+  DPR = Math.min(window.devicePixelRatio || 1, QCAP[QL]);
+  VW = innerWidth; VH = innerHeight;
+  cv.width = VW * DPR; cv.height = VH * DPR; cv.style.width = VW + 'px'; cv.style.height = VH + 'px';
+  const cs = getComputedStyle($('probe'));
+  INS = { t: parseFloat(cs.paddingTop) || 0, r: parseFloat(cs.paddingRight) || 0, b: parseFloat(cs.paddingBottom) || 0, l: parseFloat(cs.paddingLeft) || 0 };
+  LINE = VH - INS.b - 112;
+  bg = null; sprites = null;
+}
+function drawBg() {
+  const c = document.createElement('canvas'); c.width = cv.width; c.height = cv.height;
+  const g = c.getContext('2d');
+  g.fillStyle = '#160907'; g.fillRect(0, 0, c.width, c.height);
+  g.fillStyle = '#3d241c';
+  const s = 36 * DPR; for (let x = s / 2; x < c.width; x += s) for (let y = s / 2; y < c.height; y += s) g.fillRect(x, y, 1.5 * DPR, 1.5 * DPR);
+  return c;
+}
+// 种类：0 普通 1 金（回能）2 余烬（不传火）3 硬壳（多次才碎）4 火核（打死全屏引爆）
+// 5 分裂火（炸成 3 个小火）6 小火 7 疾火（速度翻倍）8 增殖火（不断长出新火）9 跳火（隔几秒往下跳）
+// 10 油桶（爆炸 ×2.4，好东西）11 寒晶（冻住全场，好东西）12 再燃火（炸后变炭，不再炸一次会复燃）13 炭 14 巨火（炸成 2 个分裂火）
+const KIND = [
+  { c: ['#8a1a08', '#ff5a1f', '#ffd25a'], r: 7 },
+  { c: ['#a86a00', '#ffd24a', '#fffbe0'], r: 8 },
+  { c: ['#2a1a16', '#5a4038', '#8c6e62'], r: 7 },
+  { c: ['#16324a', '#4aa8e0', '#dffaff'], r: 9 },
+  { c: ['#6a0f5a', '#ff4fd8', '#ffd0f5'], r: 24 },
+  { c: ['#7a2a00', '#ff8a1f', '#ffe08a'], r: 9 },
+  { c: ['#8a3a08', '#ffb347', '#fff0b0'], r: 4 },
+  { c: ['#5a0a3a', '#ff2e7a', '#ffc0e0'], r: 7 },
+  { c: ['#0a4a20', '#3fd06a', '#d8ffd0'], r: 8 },
+  { c: ['#6a5a00', '#e8e020', '#ffffc0'], r: 7 },
+  { c: ['#7a3a00', '#ff9a00', '#ffffff'], r: 10 },
+  { c: ['#0a3a5a', '#8bebff', '#ffffff'], r: 9 },
+  { c: ['#4a0808', '#c01818', '#ff8a5a'], r: 8 },
+  { c: ['#1a0a08', '#5a1810', '#ff5a1f'], r: 6 },
+  { c: ['#8a1a08', '#ff6a1f', '#ffe08a'], r: 14 }
+];
+const SPR = 72;
+// 每种火一个轮廓：坏的都是火焰变体，好的（金币、油桶、寒晶）完全不是火的形状，扫一眼就能分清
+function flameShape(g, r, cols, f, ox = 0, oy = 0, tilt = 0) {
+  for (let i = 0; i < 3; i++) {
+    const R = r * [1.15, .85, .5][i] * (1 + Math.sin(f / 4 * TAU + i * 2) * .1), a = -Math.PI / 2 + tilt + Math.sin(f / 4 * TAU + i) * .18;
+    g.fillStyle = cols[i]; g.beginPath(); g.arc(ox, oy, R, a + Math.PI / 2, a + Math.PI * 1.5);
+    g.lineTo(ox + Math.cos(a) * R * 2.1, oy + Math.sin(a) * R * 2.1); g.closePath(); g.fill();
+  }
+}
+function angryEyes(g, r, ox = 0, oy = 0) {
+  g.strokeStyle = '#2a0805'; g.lineWidth = Math.max(1.4, r * .2); g.lineCap = 'round'; g.beginPath();
+  g.moveTo(ox - r * .55, oy - r * .1); g.lineTo(ox - r * .16, oy + r * .08);
+  g.moveTo(ox + r * .55, oy - r * .1); g.lineTo(ox + r * .16, oy + r * .08); g.stroke(); g.lineCap = 'butt';
+}
+function polyPath(g, r, n, rot, ox = 0, oy = 0) {
+  g.beginPath();
+  for (let i = 0; i < n; i++) { const a = rot + i / n * TAU, x = ox + Math.cos(a) * r, y = oy + Math.sin(a) * r; i ? g.lineTo(x, y) : g.moveTo(x, y); }
+  g.closePath();
+}
+function starPath(g, r, inner, n, rot) {
+  g.beginPath();
+  for (let i = 0; i < n * 2; i++) { const a = rot + i / (n * 2) * TAU, R = i % 2 ? inner : r, x = Math.cos(a) * R, y = Math.sin(a) * R; i ? g.lineTo(x, y) : g.moveTo(x, y); }
+  g.closePath();
+}
+function drawKind(g, k, f) {
+  const K = KIND[k], r = K.r, c = K.c, bob = Math.sin(f / 4 * TAU);
+  switch (k) {
+    case 0: flameShape(g, r, c, f); angryEyes(g, r, 0, r * .15); break;
+    case 1: // 金币
+      g.fillStyle = '#a86a00'; g.beginPath(); g.ellipse(0, 0, r * 1.1 * (.75 + .25 * Math.abs(Math.cos(f / 4 * Math.PI))), r * 1.1, 0, 0, TAU); g.fill();
+      g.fillStyle = c[1]; g.beginPath(); g.ellipse(0, -1, r * .9 * (.75 + .25 * Math.abs(Math.cos(f / 4 * Math.PI))), r * .95, 0, 0, TAU); g.fill();
+      g.fillStyle = '#a86a00'; g.fillRect(-1.5, -r * .5, 3, r); break;
+    case 2: // 灰石块，不发光
+      g.fillStyle = c[0]; polyPath(g, r * 1.15, 6, .4); g.fill();
+      g.fillStyle = c[1]; polyPath(g, r * .9, 5, 1.1, -1, -1); g.fill();
+      g.strokeStyle = '#1a0f0c'; g.lineWidth = 1.2; g.beginPath(); g.moveTo(-r * .4, -r * .5); g.lineTo(r * .1, 0); g.lineTo(-r * .1, r * .6); g.stroke(); break;
+    case 3: // 六角硬壳包着火
+      g.fillStyle = c[0]; polyPath(g, r * 1.45, 6, Math.PI / 6); g.fill();
+      g.strokeStyle = c[2]; g.lineWidth = 2; polyPath(g, r * 1.45, 6, Math.PI / 6); g.stroke();
+      flameShape(g, r * .6, ['#8a3a08', '#ff7a1f', '#ffe08a'], f, 0, r * .2); break;
+    case 4: // 火核：带刺的太阳加一只眼
+      g.fillStyle = c[0]; starPath(g, r * 1.5, r * 1.05, 10, f / 4 * TAU / 10); g.fill();
+      g.fillStyle = c[1]; g.beginPath(); g.arc(0, 0, r * .95, 0, TAU); g.fill();
+      g.fillStyle = c[2]; g.beginPath(); g.arc(0, 0, r * .6, 0, TAU); g.fill();
+      g.fillStyle = '#2a0520'; g.beginPath(); g.ellipse(0, 0, r * .16, r * .5, 0, 0, TAU); g.fill(); break;
+    case 5: // 分裂火：两团挤在一起
+      flameShape(g, r * .75, c, f, -r * .55, r * .1, -.2); flameShape(g, r * .75, c, (f + 2) % 4, r * .55, r * .1, .2);
+      g.strokeStyle = '#3a1000'; g.lineWidth = 1.5; g.beginPath(); g.moveTo(0, -r * .7); g.lineTo(0, r * .9); g.stroke(); break;
+    case 6: // 小火星
+      flameShape(g, r, c, f); break;
+    case 7: // 疾火：朝下的彗星
+      g.fillStyle = 'rgba(255,46,122,.35)'; g.beginPath(); g.moveTo(-r * .8, -r * .3); g.lineTo(r * .8, -r * .3); g.lineTo(0, -r * 3.2); g.closePath(); g.fill();
+      g.fillStyle = c[1]; g.beginPath(); g.moveTo(0, r * 1.5); g.lineTo(-r, -r * .3); g.lineTo(0, r * .1); g.lineTo(r, -r * .3); g.closePath(); g.fill();
+      g.fillStyle = c[2]; g.beginPath(); g.moveTo(0, r * .9); g.lineTo(-r * .4, -r * .1); g.lineTo(r * .4, -r * .1); g.closePath(); g.fill(); break;
+    case 8: // 增殖火：一簇长出芽的绿火
+      flameShape(g, r * .8, c, f, 0, r * .25);
+      flameShape(g, r * .42, c, (f + 1) % 4, -r * .95, -r * .05 - bob); flameShape(g, r * .42, c, (f + 3) % 4, r * .95, -r * .05 + bob); break;
+    case 9: { // 跳火：脚下一根弹簧
+      const sq = 1 + bob * .15;
+      g.strokeStyle = '#8a7a10'; g.lineWidth = 2; g.beginPath();
+      for (let i = 0; i <= 6; i++) { const x = i % 2 ? r * .6 : -r * .6, y = r * .2 + i * r * .3 * sq; i ? g.lineTo(x, y) : g.moveTo(x, y); } g.stroke();
+      flameShape(g, r * .8, c, f, 0, -r * .25); break;
+    }
+    case 10: // 油桶
+      g.fillStyle = '#7a3a00'; g.beginPath(); g.roundRect(-r * .85, -r * 1.05, r * 1.7, r * 2.1, 3); g.fill();
+      g.fillStyle = c[1]; g.fillRect(-r * .85, -r * .6, r * 1.7, r * .45); g.fillRect(-r * .85, r * .2, r * 1.7, r * .45);
+      g.fillStyle = '#fff'; g.font = `bold ${r}px system-ui`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('!', 0, 0); break;
+    case 11: // 寒晶：六角雪花
+      g.strokeStyle = c[1]; g.lineWidth = 3; g.lineCap = 'round'; g.beginPath();
+      for (let i = 0; i < 6; i++) { const a = i / 6 * TAU + f / 4 * .3, x = Math.cos(a) * r * 1.3, y = Math.sin(a) * r * 1.3; g.moveTo(0, 0); g.lineTo(x, y); }
+      g.stroke(); g.fillStyle = '#ffffff'; polyPath(g, r * .55, 6, 0); g.fill(); g.lineCap = 'butt'; break;
+    case 12: // 再燃火：布满裂纹
+      flameShape(g, r, c, f); g.strokeStyle = '#1a0504'; g.lineWidth = 1.5; g.beginPath();
+      g.moveTo(-r * .5, -r * .4); g.lineTo(0, r * .1); g.lineTo(-r * .2, r * .8); g.moveTo(0, r * .1); g.lineTo(r * .6, r * .3); g.stroke(); break;
+    case 13: { // 炭：黑块里透红，闪动提示快复燃了
+      g.fillStyle = c[0]; polyPath(g, r * 1.2, 7, .3); g.fill();
+      g.strokeStyle = f % 2 ? '#ff5a1f' : '#a82810'; g.lineWidth = 1.8; g.beginPath(); g.moveTo(-r * .6, -r * .3); g.lineTo(0, r * .2); g.lineTo(r * .5, -r * .4); g.moveTo(0, r * .2); g.lineTo(-r * .1, r * .8); g.stroke(); break;
+    }
+    case 14: // 巨火：戴一圈小火苗
+      flameShape(g, r * .45, c, (f + 1) % 4, -r * .9, -r * .4); flameShape(g, r * .45, c, (f + 3) % 4, r * .9, -r * .4);
+      flameShape(g, r, c, f); angryEyes(g, r, 0, r * .2); break;
+  }
+}
+function makeSprites() {
+  const out = [], px = Math.ceil(SPR * DPR);
+  KIND.forEach((K, k) => {
+    const fr = [];
+    for (let f = 0; f < 4; f++) {
+      const c = document.createElement('canvas'); c.width = c.height = px;
+      const g = c.getContext('2d'); g.scale(DPR, DPR); g.translate(SPR / 2, SPR / 2);
+      drawKind(g, k, f);
+      fr.push(c);
+    }
+    out.push(fr);
+  });
+  return out;
+}
+// 火海本体：沿每一列最靠前的火拉出一道翻滚的火线，整片火连成一个往下压的东西
+const SEA_COLS = 26;
+function drawSea() {
+  const h = new Array(SEA_COLS + 1).fill(-40), w = VW / SEA_COLS;
+  for (const m of motes) {
+    if (m.dead) continue;
+    const i = clamp(Math.round(m.x / w), 0, SEA_COLS);
+    if (m.y + 16 > h[i]) h[i] = m.y + 16;
+  }
+  for (let p = 0; p < 2; p++) for (let i = 1; i < SEA_COLS; i++) h[i] = Math.max(h[i], (h[i - 1] + h[i + 1]) / 2 - 14);
+  const maxH = Math.max(...h);
+  if (maxH < 10) return;
+  const edge = new Path2D();
+  edge.moveTo(0, h[0] + Math.sin(time * 4) * 5);
+  for (let i = 1; i <= SEA_COLS; i++) edge.lineTo(i * w, h[i] + Math.sin(time * 4 + i * .9) * 5 + Math.sin(time * 7 + i * 2.1) * 3);
+  const fill = new Path2D(edge); fill.lineTo(VW, -20); fill.lineTo(0, -20); fill.closePath();
+  const g = ctx.createLinearGradient(0, 0, 0, maxH);
+  g.addColorStop(0, 'rgba(60,12,6,.12)'); g.addColorStop(1, `rgba(170,36,10,${.38 + .25 * danger})`);
+  ctx.fillStyle = g; ctx.fill(fill);
+  ctx.lineJoin = 'round';
+  ctx.globalAlpha = .28; ctx.strokeStyle = '#ff5a1f'; ctx.lineWidth = 14; ctx.stroke(edge);
+  ctx.globalAlpha = .85; ctx.strokeStyle = '#ffb020'; ctx.lineWidth = 2.5; ctx.stroke(edge);
+  ctx.globalAlpha = 1;
+  // 火线上不断飘起火星
+  if (parts.length < 120 && Math.random() < .6) { const i = irand(SEA_COLS + 1); if (h[i] > 20) parts.push({ x: i * w, y: h[i], vx: rand(-20, 20), vy: rand(-90, -40), life: rand(.4, .8), c: '#ffb020' }); }
+}
+
+// ───────── 音效 ─────────
+let AC = null, master = null, voices = 0, riser = null, noiseBuf = null;
+function audioInit() {
+  if (AC) { if (AC.state === 'suspended') AC.resume(); return; }
+  try {
+    AC = new (window.AudioContext || window.webkitAudioContext)();
+    master = AC.createGain(); master.gain.value = save.snd ? .5 : 0; master.connect(AC.destination);
+  } catch (e) { AC = null; }
+}
+function tone(f, dur, type = 'sine', vol = .2, slide = 1, delay = 0) {
+  if (!AC || !save.snd || voices >= 20) return;
+  voices++;
+  const t = AC.currentTime + delay, o = AC.createOscillator(), g = AC.createGain();
+  o.onended = () => { voices--; };
+  o.type = type; o.frequency.setValueAtTime(f, t);
+  if (slide !== 1) o.frequency.exponentialRampToValueAtTime(Math.max(30, f * slide), t + dur);
+  g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(1e-4, t + dur);
+  o.connect(g); g.connect(master); o.start(t); o.stop(t + dur + .02);
+}
+function noise(dur, vol, freq, type = 'lowpass') {
+  if (!AC || !save.snd || voices >= 20) return;
+  voices++;
+  if (!noiseBuf) { noiseBuf = AC.createBuffer(1, AC.sampleRate, AC.sampleRate); const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; }
+  const t = AC.currentTime, s = AC.createBufferSource(), f = AC.createBiquadFilter(), g = AC.createGain();
+  s.onended = () => { voices--; };
+  s.buffer = noiseBuf; f.type = type; f.frequency.value = freq;
+  g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(1e-4, t + dur);
+  s.connect(f); f.connect(g); g.connect(master); s.start(t, Math.random() * .5, dur + .05);
+}
+const SCALE = [0, 3, 5, 7, 10];
+const sfx = {
+  tap: k => { tone(90, .5, 'sine', .4 + .15 * k, .4); noise(.4, .4, 500); tone(1400, .12, 'triangle', .1, .4); },
+  pop: n => { const i = Math.floor(Math.log2(n + 1) * 2.4), st = SCALE[i % 5] + 12 * Math.floor(i / 5); tone(196 * Math.pow(2, st / 12), .08, 'square', .04, 1.4); noise(.05, .1, 3500); },
+  boom: () => { tone(70, .5, 'sine', .3, .5); noise(.35, .28, 700); },
+  ready: () => { tone(660, .1, 'triangle', .1); tone(990, .14, 'triangle', .1, 1, .07); },
+  deny: () => tone(150, .12, 'square', .05, .7),
+  aimTick: k => tone(220 * Math.pow(2, k * 2), .09, 'triangle', .05 + .05 * k),
+  freeze: () => { tone(1800, .4, 'sine', .1, .4); noise(.3, .2, 6000, 'highpass'); },
+  clink: () => tone(2200, .05, 'square', .04, .6),
+  beat: () => { tone(58, .16, 'sine', .32, .7); tone(52, .18, 'sine', .24, .7, .17); },
+  hurt: () => { noise(.4, .45, 900); tone(200, .4, 'sawtooth', .16, .35); },
+  push: () => { noise(.5, .3, 5000, 'highpass'); tone(160, .5, 'sine', .3, 3); },
+  nuke: () => { tone(55, 1.2, 'sine', .45, .4); noise(1, .4, 900); [0, 7, 12, 19].forEach((s, i) => tone(392 * Math.pow(2, s / 12), .4, 'triangle', .12, 1, i * .07)); },
+  pick: () => tone(880, .1, 'square', .05, 1.5),
+  die: () => { noise(.9, .5, 600); tone(300, .9, 'sine', .2, .2); }
+};
+function riserStart() {
+  if (!AC || !save.snd || riser) return;
+  const o = AC.createOscillator(), f = AC.createBiquadFilter(), g = AC.createGain();
+  o.type = 'sawtooth'; o.frequency.value = 55; f.type = 'lowpass'; f.frequency.value = 300; g.gain.value = 0;
+  o.connect(f); f.connect(g); g.connect(master); o.start();
+  riser = { o, f, g };
+}
+function riserSet(k) {
+  if (!riser) return;
+  const t = AC.currentTime;
+  riser.o.frequency.setTargetAtTime(55 + 330 * k, t, .08); riser.f.frequency.setTargetAtTime(300 + 3800 * k, t, .08); riser.g.gain.setTargetAtTime(.02 + .13 * k, t, .08);
+}
+function riserStop() {
+  if (!riser) return;
+  const r = riser; riser = null; r.g.gain.setTargetAtTime(0, AC.currentTime, .08);
+  setTimeout(() => { try { r.o.stop(); } catch (e) {} }, 500);
+}
+const canVibe = !!navigator.vibrate;
+let lastBuzz = 0;
+function buzz(p, force) {
+  if (!canVibe || !save.vib) return;
+  const now = performance.now();
+  if (!force && now - lastBuzz < 90) return;
+  lastBuzz = now;
+  try { navigator.vibrate(p); } catch (e) {}
+}
+
+// ───────── 一局的状态 ─────────
+let state = 'play', time = 0, motes = [], blasts = [], parts = [], floats = [];
+let wave = 0, hp = 3, score = 0, charge = 0, shots = 0, holdT = 0, chain = 0, chainMax = 0, chainPeak = 0, pushLeft = 0;
+let aim = null, aimTickT = 0, pvN = 0, pvT = 0;
+const HOLD_T = 1.4;
+const aimK = () => aim && shots > 0 ? Math.min(1, aim.t / HOLD_T) : 0;
+let waveT = 0, freezeT = 0, shake = 0, flashA = 0, flashC = '#fff', stopT = 0, invT = 0, danger = 0, beatT = 0, picksDone = 0, upLv = {}, milestone = 25, banner = null, popT = 0, boomT = 0;
+let gridMap = new Map(), pickShownAt = 0;
+const GRID = 44, CELL = 26;
+const gkey = (cx, cy) => (cx + 50) * 8192 + cy + 50;
+const WAVE_SPEED = 120;
+// 火海越往后越快，后期一定守不住，比的是能撑到第几波
+const speed = () => (38 + 2 * wave + .14 * wave * wave) * S.slow;
+const mkBlast = (x, y, t, rad, gen, k) => { const grow = Math.max(.2, rad / WAVE_SPEED); return { x, y, t, grow, T: grow + .26, R: rad, r: 0, gen, k, full: false }; };
+
+function newGame() {
+  S = baseS(); wave = 0; hp = 3; score = 0; charge = 0; shots = 1; freezeT = 0; aim = null; chain = 0; chainMax = 0; chainPeak = 0; pushLeft = 0;
+  motes = []; blasts = []; parts = []; floats = []; picksDone = 0; upLv = {}; milestone = 25; invT = 0; danger = 0;
+  state = 'play'; banner = { t: 3, a: '按住瞄准，松手引爆', b: '蓄满：破甲、连锁更远、回能', c: '#ffd24a' };
+  $('over').classList.remove('on'); $('pick').classList.remove('on');
+  save.runs++; persist();
+  nextWave();
+}
+// 阵型：都按格子排，相邻的格子能连锁，隔两格以上就断开，所以要看准再点
+function layout(w) {
+  const cols = Math.floor((VW - 24) / CELL), rows = Math.min(6 + Math.floor(w / 2), 15), cells = [];
+  const P = w < 3 ? 0 : irand(Math.min(5, 1 + Math.floor(w / 2)));
+  const put = (c, r) => { if (c >= 0 && c < cols && r >= 0 && r < rows) cells.push([c, r]); };
+  if (P === 0) { // 几座孤岛
+    const n = 2 + Math.min(3, Math.floor(w / 3)), bw = Math.max(3, Math.floor(cols / n) - 2);
+    for (let i = 0; i < n; i++) {
+      const x0 = Math.floor(i * cols / n) + irand(2), y0 = irand(Math.max(1, rows - 4)), h = 3 + irand(Math.max(1, rows - y0 - 2));
+      for (let c = 0; c < bw; c++) for (let r = 0; r < h; r++) put(x0 + c, y0 + r);
+    }
+  } else if (P === 1) { // 竖条：每条要单独炸
+    const gap = 2 + irand(2);
+    for (let c = irand(2); c < cols; c += gap + 2) for (let r = 0; r < rows; r++) { put(c, r); put(c + 1, r); }
+  } else if (P === 2) { // 横带：一排一排压下来
+    for (let r = 0; r < rows; r += 4) for (let c = 0; c < cols; c++) { put(c, r); put(c, r + 1); }
+  } else if (P === 3) { // 环形：外面一圈连着，里面藏一团
+    for (let c = 1; c < cols - 1; c++) { put(c, 0); put(c, rows - 1); }
+    for (let r = 0; r < rows; r++) { put(1, r); put(cols - 2, r); }
+    for (let c = 4; c < cols - 4; c++) for (let r = 3; r < rows - 3; r++) put(c, r);
+  } else { // 蛇形：一条长路，点对了一路烧到底
+    let c = irand(cols), dir = Math.random() < .5 ? 1 : -1;
+    for (let r = 0; r < rows; r++) {
+      const len = 4 + irand(Math.floor(cols * .7));
+      for (let i = 0; i < len; i++) { put(c, r); c += dir; if (c <= 0 || c >= cols - 1) { dir *= -1; break; } }
+      put(c, r + 1);
+    }
+  }
+  return { cells, cols, rows };
+}
+// 第一次出现时提示：[波数, 种类, 名字, 说明]
+const INTRO = [
+  [2, 10, '油桶', '炸到它爆炸翻倍，优先点它旁边'],
+  [3, 2, '灰色余烬', '它不传火，会把连锁截断'],
+  [4, 7, '疾火', '跑得比别人快一倍'],
+  [5, 3, '蓝色硬壳', '要炸好几次才碎'],
+  [6, 5, '分裂火', '炸了会变成 3 个小火'],
+  [7, 11, '寒晶', '炸到它，全场火海冻住'],
+  [9, 9, '跳火', '隔几秒就往下跳一大步'],
+  [10, 12, '再燃火', '炸一次变成炭，不补一炸就复燃'],
+  [11, 8, '增殖火', '会不断长出新火，先清掉它'],
+  [12, 14, '巨火', '炸成分裂火，分裂火再炸成小火']
+];
+// 特殊波：某种火大量出现
+const MODS = [
+  ['疾风波', { 7: .55 }], ['铁壁波', { 3: .55 }], ['分裂波', { 14: .25, 5: .3 }],
+  ['黄金波', { 1: .35 }], ['再燃波', { 12: .5 }], ['油桶波', { 10: .22 }], ['跳火波', { 9: .45 }]
+];
+function kindTable(w, mod) {
+  const T = [[1, 1, S.gold], [10, 2, .06], [2, 3, Math.min(.3, .035 * (w - 2))], [7, 4, Math.min(.18, .02 * (w - 3))],
+    [3, 5, Math.min(.3, .04 * (w - 4))], [5, 6, Math.min(.16, .02 * (w - 5))], [11, 7, .025], [9, 9, Math.min(.12, .015 * (w - 8))],
+    [12, 10, Math.min(.16, .02 * (w - 9))], [8, 11, Math.min(.1, .025 * (w - 10))], [14, 12, Math.min(.1, .015 * (w - 11))]];
+  const out = T.filter(t => w >= t[1]).map(t => [t[0], t[2]]);
+  if (mod) for (const k in mod) { const e = out.find(x => x[0] === +k); if (e) e[1] = mod[k]; else out.push([+k, mod[k]]); }
+  // 特殊火最多占 75%，保证各种火都排得上，也留下能传火的普通火
+  const sum = out.reduce((n, t) => n + t[1], 0);
+  if (sum > .75) for (const t of out) t[1] *= .75 / sum;
+  return shuffle(out);
+}
+function addMote(x, y, k, extra) {
+  const m = { x, y, k, r: KIND[k].r, hp: 1, ph: Math.random() * 4, dead: false, lastB: null, imm: 0, v: 1, t: rand(2, 4) };
+  if (k === 3) m.hp = Math.min(4, 2 + Math.floor(wave / 12));
+  if (k === 6) m.v = 1.25;
+  if (k === 7) m.v = 2;
+  motes.push(Object.assign(m, extra));
+  return m;
+}
+function nextWave() {
+  wave++; waveT = 0;
+  const { cells, rows } = layout(wave), seen = new Set();
+  // 第一波直接出现在屏幕上，开局不用等
+  const top = wave === 1 ? rows * CELL + 70 : Math.min(-20, motes.reduce((m, o) => o.dead ? m : Math.min(m, o.y), 0) - 50);
+  const mod = wave >= 6 && wave % 8 && Math.random() < .35 ? MODS[irand(MODS.length)] : null;
+  const T = kindTable(wave, mod && mod[1]);
+  for (const [c, r] of cells) {
+    const key = c + ',' + r; if (seen.has(key)) continue; seen.add(key);
+    let x = Math.random(), k = 0;
+    for (const [kk, w] of T) { if ((x -= w) < 0) { k = kk; break; } }
+    addMote(12 + (c + .5) * CELL + rand(-3, 3), top - (rows - r) * CELL + rand(-3, 3), k);
+  }
+  const intro = INTRO.find(t => t[0] === wave);
+  if (wave % 8 === 0) {
+    const h = 6 + Math.floor(wave / 2);
+    addMote(VW / 2, top - rows * CELL * .5, 4, { hp: h, max: h });
+    banner = { t: 2.4, a: '火核来袭', b: '炸够次数，全屏一起引爆', c: '#ff4fd8' };
+  } else if (intro) banner = { t: 2.4, a: intro[2], b: intro[3], c: KIND[intro[1]].c[1], k: intro[1] };
+  else if (mod) banner = { t: 1.6, a: mod[0], b: `第 ${wave} 波`, c: '#ffb020' };
+}
+function buildGrid() {
+  gridMap.clear();
+  for (const m of motes) {
+    if (m.dead) continue;
+    const k = gkey(Math.floor(m.x / GRID), Math.floor(m.y / GRID));
+    let c = gridMap.get(k); if (!c) gridMap.set(k, c = []); c.push(m);
+  }
+}
+// 按下开始瞄准，松开才引爆。按得越久越大，蓄满时破甲、回能
+function aimStart(x, y) {
+  if (state !== 'play' || aim) return;
+  audioInit();
+  aim = { x, y, t: 0 }; aimTickT = 0; pvT = 0; pvN = 0;
+}
+function aimMove(x, y) { if (aim) { aim.x = x; aim.y = y; } }
+function aimEnd() {
+  if (!aim) return;
+  const { x, y } = aim, k = aimK(); aim = null;
+  if (state !== 'play') return;
+  if (shots <= 0) { sfx.deny(); floats.push({ x, y, txt: '还没充满', c: '#c2a193', life: .5 }); return; }
+  tap(x, y, k);
+}
+function tap(x, y, k = 0) {
+  if (state !== 'play' || shots <= 0) return;
+  const full = k >= .98, pow = 1 + k * S.hold;
+  shots--;
+  if (!blasts.length) { chain = 0; milestone = 25; riserStart(); }
+  const b = mkBlast(x, y, 0, S.R * 1.35 * pow, 0, 9);
+  b.perfect = full; b.boost = full ? 1.3 : 1; blasts.push(b);
+  stopT = .06 + .08 * k; shake = 10 + 10 * k; flashA = .45 + .3 * k; flashC = full ? '#ffffff' : '#dffaff';
+  if (full) { charge += .6; floats.push({ x, y: y - 60, txt: '满蓄力！', c: '#ffffff', life: .8, big: true }); }
+  sfx.tap(k); buzz(30 + 40 * k, true);
+}
+// 瞄准预览：沿传火规则算一遍，高亮这一炸能连到的火苗
+function preview() {
+  buildGrid();
+  const k = aimK(), rr = S.R * 1.35 * (1 + k * S.hold), full = k >= .98, q = [], c = Math.ceil(rr / GRID) + 1, ax = Math.floor(aim.x / GRID), ay = Math.floor(aim.y / GRID);
+  for (const m of motes) m.pv = false;
+  const blocks = m => (m.k === 2 && !S.burn) || m.hp > 1 || m.k === 13 || m.k === 4 || m.imm > 0;
+  for (let i = -c; i <= c; i++) for (let j = -c; j <= c; j++) {
+    const cell = gridMap.get(gkey(ax + i, ay + j)); if (!cell) continue;
+    for (const m of cell) if (!m.pv && Math.hypot(m.x - aim.x, m.y - aim.y) < rr + m.r) { m.pv = true; if (full || !blocks(m)) q.push(m); }
+  }
+  let n = 0;
+  for (const m of motes) if (m.pv) n++;
+  while (q.length) {
+    const a = q.pop(), L = (full ? 1.3 : 1) * S.R * (a.k === 10 ? 2.4 : a.k === 14 ? 1.5 : 1), lc = Math.ceil(L / GRID) + 1, cx = Math.floor(a.x / GRID), cy = Math.floor(a.y / GRID);
+    for (let i = -lc; i <= lc; i++) for (let j = -lc; j <= lc; j++) {
+      const cell = gridMap.get(gkey(cx + i, cy + j)); if (!cell) continue;
+      for (const m of cell) if (!m.pv && Math.hypot(m.x - a.x, m.y - a.y) < L + m.r) { m.pv = true; n++; if (!blocks(m)) q.push(m); }
+    }
+  }
+  pvN = n;
+}
+function ignite(m, gen, boost = 1) {
+  m.dead = true; chain++; R_frame++;
+  if (m.k === 1) { charge += .3; floats.push({ x: m.x, y: m.y, txt: '+充能', c: '#ffd24a', life: .7 }); }
+  if (m.k === 11) { freezeT = 2.4; flashA = Math.max(flashA, .35); flashC = '#8bebff'; floats.push({ x: m.x, y: m.y, txt: '冻结！', c: '#8bebff', life: .9 }); sfx.freeze(); }
+  if (m.k === 14) splitInto(m, 5, 2); else if (m.k === 5) splitInto(m, 6, 3);
+  if (m.k !== 13 && (m.k !== 2 || S.burn || m.fb)) { const nb = mkBlast(m.x, m.y, -rand(.05, .13), boost * S.R * (m.k === 10 ? 2.4 : m.k === 14 ? 1.5 : 1), gen, m.k); nb.boost = boost; blasts.push(nb); }
+  if (parts.length < 400) for (let i = 0; i < 2; i++) {
+    const a = Math.random() * TAU, s = rand(60, 240);
+    parts.push({ x: m.x, y: m.y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, life: rand(.25, .5), c: KIND[m.k].c[1] });
+  }
+}
+// 分裂：小火向四周弹开，有一小段无敌，所以这一炸烧不到，要再炸一次
+function splitInto(m, k, n) {
+  for (let i = 0; i < n; i++) {
+    const a = rand(-.5, .5) + (i - (n - 1) / 2) * 1.3 - Math.PI / 2;
+    addMote(m.x, m.y, k, { imm: .8, fx: Math.cos(a) * 170, fy: Math.sin(a) * 170 });
+  }
+}
+let R_frame = 0;
+function scan(b) {
+  const x0 = Math.floor((b.x - b.r - 30) / GRID), x1 = Math.floor((b.x + b.r + 30) / GRID), y0 = Math.floor((b.y - b.r - 30) / GRID), y1 = Math.floor((b.y + b.r + 30) / GRID);
+  for (let cx = x0; cx <= x1; cx++) for (let cy = y0; cy <= y1; cy++) {
+    const c = gridMap.get(gkey(cx, cy)); if (!c) continue;
+    for (const m of c) {
+      if (m.dead || m.imm > 0 || Math.hypot(m.x - b.x, m.y - b.y) >= b.r + m.r) continue;
+      // 满蓄力的第一炸：打穿硬壳，余烬也跟着传火
+      if (b.perfect && m.k !== 4) { m.hp = 1; if (m.k === 3) m.k = 0; if (m.k === 2) m.fb = true; if (m.k === 13) m.imm = 0; }
+      else if (b.perfect && m.k === 4) m.hp -= 2;
+      if (m.hp > 1) {
+        // 每次受击后短暂无敌，一轮连锁打不穿，要多炸几次
+        m.hp -= S.pierce; m.imm = .5; sfx.clink();
+        if (m.hp <= 1) { m.hp = 1; if (m.k === 3) m.k = 0; }
+        continue;
+      }
+      if (m.k === 12) { // 再燃：这次也会传火，但只留下一块炭
+        m.k = 13; m.r = KIND[13].r; m.imm = .9; m.t = 2.8; chain++; R_frame++;
+        { const nb = mkBlast(m.x, m.y, -rand(.05, .13), S.R * (b.boost || 1), b.gen + 1, 12); nb.boost = b.boost; blasts.push(nb); }
+        continue;
+      }
+      if (m.k === 4) { nukeAll(m); continue; }
+      ignite(m, b.gen + 1, b.boost || 1);
+    }
+  }
+}
+// 打死火核：全屏引爆，这是最大的一次释放
+function nukeAll(core) {
+  core.dead = true; chain++;
+  blasts.push(mkBlast(core.x, core.y, 0, 150, 1, 9));
+  for (const m of motes) if (!m.dead && m.y > -40) { m.hp = 1; ignite(m, 2); }
+  stopT = .2; flashA = .9; flashC = '#ffffff'; shake = 22; sfx.nuke(); buzz([60, 40, 60, 40, 160], true);
+  floats.push({ x: VW / 2, y: VH * .4, txt: '全屏引爆！', c: '#ffffff', life: 1.3, big: true });
+}
+// 一轮连锁结束：越长返还的充能越多，还把剩下的火海推回去
+function chainEnd() {
+  riserStop();
+  const n = chain;
+  chainMax = Math.max(chainMax, n);
+  score += Math.round(n * (1 + n / 15));
+  charge += Math.min(.55, n * .007 * S.refund);
+  if (n >= 15) {
+    pushLeft += Math.min(170, n * 1.6) * S.push * Math.max(.3, 1 - .035 * wave); sfx.push(); buzz(40);
+    floats.push({ x: VW / 2, y: VH * .55, txt: `连锁 ${n} · 推回去！`, c: '#8bebff', life: 1, big: true });
+  }
+  chain = 0;
+}
+
+// ───────── 更新 ─────────
+function update(rdt) {
+  time += rdt;
+  let dt = rdt;
+  if (stopT > 0) { stopT -= rdt; dt = rdt * .05; }
+  if (aim && shots > 0 && state === 'play') dt *= .45;
+  shake = Math.max(0, shake - rdt * 45);
+  flashA = Math.max(0, flashA - rdt * 3);
+  for (let i = parts.length - 1; i >= 0; i--) { const p = parts[i]; p.x += p.vx * dt; p.y += p.vy * dt; p.vx *= 1 - dt * 3; p.vy *= 1 - dt * 3; if ((p.life -= dt) <= 0) parts.splice(i, 1); }
+  for (let i = floats.length - 1; i >= 0; i--) { const f = floats[i]; f.y -= (f.big ? 20 : 50) * dt; if ((f.life -= dt) <= 0) floats.splice(i, 1); }
+  if (banner && (banner.t -= rdt) <= 0) banner = null;
+  if (state !== 'play') return;
+
+  // 充能：连锁期间也在充。存满后继续等待就是“憋大招”
+  charge += dt / S.chargeT;
+  while (charge >= 1 && shots < S.store) { charge -= 1; shots++; sfx.ready(); buzz(12); }
+  if (shots >= S.store) charge = Math.min(charge, 1);
+  if (aim) {
+    const was = aimK();
+    if (shots > 0) aim.t += rdt;
+    const k = aimK();
+    if ((aimTickT -= rdt) <= 0 && shots > 0 && k < 1) { aimTickT = .11; sfx.aimTick(k); }
+    if (k >= 1 && was < 1) { sfx.ready(); buzz(35, true); shake = Math.max(shake, 5); }
+    if ((pvT -= rdt) <= 0) { pvT = .08; preview(); }
+  }
+  invT -= dt;
+
+  // 火海推进：爆炸时慢下来看清楚，连锁结束后被推回去
+  if (freezeT > 0) freezeT -= dt;
+  const chaining = blasts.length > 0, v = freezeT > 0 ? 0 : speed() * (chaining ? Math.min(.85, .2 + .025 * wave) : 1);
+  let dy = v * dt, pushY = 0;
+  if (pushLeft > 0) { const p = Math.min(pushLeft, 500 * dt); pushLeft -= p; pushY = p; }
+  let minY = Infinity, maxY = -Infinity;
+  for (let mi = 0, mn = motes.length; mi < mn; mi++) {
+    const m = motes[mi];
+    if (m.dead) continue;
+    m.y += dy * m.v - pushY;
+    if (m.imm > 0) m.imm -= dt;
+    if (m.fy !== undefined) { m.x = clamp(m.x + m.fx * dt, 10, VW - 10); m.y += m.fy * dt; m.fx *= 1 - dt * 3; m.fy *= 1 - dt * 3; if (Math.abs(m.fx) + Math.abs(m.fy) < 6) { m.fx = undefined; m.fy = undefined; } }
+    if (freezeT <= 0 && !chaining) {
+      if (m.k === 9 && (m.t -= dt) <= 0) { m.t = rand(2.2, 3.4); m.y += 75; if (parts.length < 400) parts.push({ x: m.x, y: m.y - 40, vx: 0, vy: 90, life: .3, c: KIND[9].c[1] }); }
+      if (m.k === 8 && (m.t -= dt) <= 0 && motes.length < 420) { m.t = rand(3, 4.5); const a = Math.random() * TAU; addMote(clamp(m.x + Math.cos(a) * 30, 14, VW - 14), m.y + Math.sin(a) * 30, 0); }
+    }
+    if (m.k === 13 && !chaining && (m.t -= dt) <= 0) { m.k = 12; m.r = KIND[12].r; }
+    if (m.y < minY) minY = m.y;
+    if (m.y > maxY) maxY = m.y;
+    if (m.y >= LINE) {
+      m.dead = true;
+      if (invT <= 0) {
+        hp--; invT = .9; pushLeft += 90; flashA = .7; flashC = '#ff3a1f'; shake = 18; sfx.hurt(); buzz(90, true);
+        if (hp <= 0) { lose(); return; }
+      }
+    }
+  }
+  danger = clamp(1 - (LINE - maxY) / 200, 0, 1);
+  if (danger > .3 && (beatT -= rdt) <= 0) { beatT = 1.1 - .6 * danger; sfx.beat(); buzz(18); }
+
+  // 爆炸
+  if (chaining) {
+    buildGrid();
+    R_frame = 0;
+    for (let i = blasts.length - 1; i >= 0; i--) {
+      const b = blasts[i];
+      b.t += dt;
+      if (b.t < 0) continue;
+      if (b.t >= b.T) { blasts.splice(i, 1); continue; }
+      if (!b.full) {
+        const p = Math.min(1, b.t / b.grow);
+        b.r = b.R * (1 - Math.pow(1 - p, 2)); scan(b);
+        if (p >= 1) b.full = true;
+      }
+    }
+    if (R_frame) {
+      shake = Math.max(shake, Math.min(14, 2 + R_frame * 1.2));
+      if (time - popT > .035) { popT = time; sfx.pop(chain); }
+      if (R_frame >= 6 && time - boomT > .18) { boomT = time; sfx.boom(); }
+    }
+    while (chain >= milestone) {
+      floats.push({ x: VW / 2, y: VH * .42, txt: `${milestone} 连锁！`, c: '#ffd24a', life: .8, big: true });
+      flashA = Math.max(flashA, .2); flashC = '#ffd24a'; buzz(25); stopT = Math.max(stopT, .04);
+      milestone *= 2;
+    }
+    chainPeak = Math.max(chainPeak, chain);
+    riserSet(Math.min(1, blasts.length / 120));
+    if (!blasts.length) chainEnd();
+  }
+  if (motes.length > 40) motes = motes.filter(m => !m.dead);
+
+  // 下一波：当前的火全部进场后接着来；清场了立刻来
+  const alive = motes.some(m => !m.dead);
+  waveT += dt;
+  // 选卡等连锁结束再弹，不会被跳过
+  if (!blasts.length && !aim && waveT > 2.5 && picksDone < Math.floor(wave / 2)) { showPick(); return; }
+  // 每波至少留 6 秒；清场了立刻来下一波，打得快节奏就快
+  if (!alive || (minY > -30 && waveT > Math.max(2.5, 6 - .12 * wave))) {
+    nextWave();
+  }
+}
+function lose() {
+  aim = null; state = 'over'; riserStop(); sfx.die(); buzz(200, true); shake = 20;
+  const nw = wave > save.bestWave, ns = score > save.bestScore;
+  save.bestWave = Math.max(save.bestWave, wave); save.bestScore = Math.max(save.bestScore, score); save.bestChain = Math.max(save.bestChain, chainMax); persist();
+  setTimeout(() => {
+    $('o-why').textContent = `火海压到了第 ${wave} 波`;
+    $('o-stats').innerHTML = [['守到', `第 ${wave} 波`], ['得分', score.toLocaleString()], ['最长连锁', chainMax], ['历史最高', `第 ${save.bestWave} 波`]].map(([l, v]) => `<div><span>${l}</span><b>${v}</b></div>`).join('');
+    $('o-new').textContent = nw || ns ? '新纪录！' : '';
+    $('over').classList.add('on');
+  }, 900);
+}
+function pickOptions() {
+  const keys = Object.keys(UPS).filter(k => (upLv[k] || 0) < UPS[k].max && (!UPS[k].ok || UPS[k].ok()));
+  return shuffle(keys).slice(0, 3);
+}
+function showPick() {
+  state = 'pick'; pickShownAt = performance.now();
+  $('p-title').textContent = `守住第 ${wave} 波`;
+  $('p-cards').innerHTML = pickOptions().map(k => `<button class="card" data-k="${k}"><b>${UPS[k].name}</b><i>${UPS[k].text}</i></button>`).join('');
+  $('p-cards').querySelectorAll('.card').forEach(b => b.onclick = () => choose(b.dataset.k));
+  $('pick').classList.add('on');
+}
+function choose(k, force) {
+  if (state !== 'pick' || (!force && performance.now() - pickShownAt < 350)) return;
+  UPS[k].apply(); upLv[k] = (upLv[k] || 0) + 1; picksDone++;
+  sfx.pick(); $('pick').classList.remove('on'); state = 'play';
+}
+
+// ───────── 绘制 ─────────
+const TTL = s => `${s}px "ZCOOL QingKe HuangYou","PingFang SC","Microsoft YaHei",sans-serif`;
+const NUM = s => `700 ${s}px "Chakra Petch",ui-monospace,system-ui,sans-serif`;
+const FONT = s => `bold ${s}px system-ui,"PingFang SC","Microsoft YaHei",sans-serif`;
+function outlined(txt, x, y, lw) { ctx.lineJoin = 'round'; ctx.strokeStyle = '#120807'; ctx.lineWidth = lw; ctx.strokeText(txt, x, y); ctx.fillText(txt, x, y); }
+function render() {
+  if (VW < 2 || VH < 2) return;
+  if (!bg) bg = drawBg();
+  if (!sprites) sprites = makeSprites();
+  ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
+  ctx.drawImage(bg, 0, 0);
+  const sx = rand(-shake, shake), sy = rand(-shake, shake);
+  ctx.setTransform(DPR, 0, 0, DPR, DPR * sx, DPR * sy);
+  // 底线：火越近越红
+  ctx.fillStyle = `rgba(255,${Math.round(90 - 60 * danger)},31,${.25 + .6 * danger * (.6 + .4 * Math.sin(time * 10))})`; ctx.fillRect(0, LINE, VW, 4);
+  drawSea();
+  for (const m of motes) {
+    if (m.dead || m.y < -30) continue;
+    const sz = SPR * (1 + .28 * clamp((m.y - LINE + 280) / 280, 0, 1));
+    ctx.drawImage(sprites[m.k][Math.floor(time * 10 + m.ph) % 4], m.x - sz / 2, m.y - sz / 2, sz, sz);
+    if (m.k === 4) { ctx.fillStyle = '#ffffff'; ctx.font = NUM(18); ctx.textAlign = 'center'; outlined(m.hp, m.x, m.y + 44, 4); }
+    else if (m.k === 3 && m.hp > 1) { ctx.fillStyle = '#ffffff'; ctx.font = NUM(11); ctx.textAlign = 'center'; outlined(m.hp, m.x + 9, m.y - 8, 3); }
+
+  }
+  drawBlasts();
+  if (aim) drawAim();
+  if (freezeT > 0) { ctx.globalAlpha = Math.min(.22, freezeT * .2); ctx.fillStyle = '#8bebff'; ctx.fillRect(0, 0, VW, LINE); ctx.globalAlpha = 1; }
+  ctx.globalCompositeOperation = 'lighter';
+  for (const p of parts) { ctx.globalAlpha = Math.min(1, p.life * 3); ctx.fillStyle = p.c; ctx.fillRect(p.x - 1.5, p.y - 1.5, 3, 3); }
+  ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1;
+  drawCube();
+  ctx.textAlign = 'center';
+  for (const f of floats) { ctx.globalAlpha = Math.min(1, f.life * 2); ctx.fillStyle = f.c; ctx.font = f.big ? TTL(36) : FONT(13); outlined(f.txt, f.x, f.y, f.big ? 7 : 3); }
+  ctx.globalAlpha = 1;
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  if (danger > 0) {
+    const g = ctx.createRadialGradient(VW / 2, VH / 2, Math.min(VW, VH) * .4, VW / 2, VH / 2, Math.max(VW, VH) * .75);
+    g.addColorStop(0, 'rgba(255,40,20,0)'); g.addColorStop(1, `rgba(255,40,20,${.45 * danger})`);
+    ctx.fillStyle = g; ctx.fillRect(0, 0, VW, VH);
+  }
+  if (flashA > 0) { ctx.globalAlpha = Math.min(.75, flashA) * .7; ctx.fillStyle = flashC; ctx.fillRect(0, 0, VW, VH); ctx.globalAlpha = 1; }
+  drawHUD();
+}
+function drawAim() {
+  const k = aimK(), rr = S.R * 1.35 * (1 + k * S.hold), full = k >= .98, c = full ? '#ffffff' : shots > 0 ? '#8bebff' : '#6a5a54';
+  // 能连到的火苗：亮圈
+  const hl = new Path2D();
+  for (const m of motes) if (m.pv && !m.dead) { hl.moveTo(m.x + m.r + 5, m.y); hl.arc(m.x, m.y, m.r + 5, 0, TAU); }
+  ctx.globalAlpha = .9; ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1.6; ctx.stroke(hl);
+  ctx.globalAlpha = .1 + .12 * k; ctx.fillStyle = c; ctx.beginPath(); ctx.arc(aim.x, aim.y, rr, 0, TAU); ctx.fill();
+  ctx.globalAlpha = 1; ctx.strokeStyle = c; ctx.lineWidth = full ? 3.5 : 2; ctx.setLineDash(full ? [] : [8, 7]); ctx.stroke(); ctx.setLineDash([]);
+  // 蓄力进度：圈外一道弧
+  if (shots > 0 && !full) { ctx.strokeStyle = '#ffd24a'; ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(aim.x, aim.y, rr + 7, -Math.PI / 2, -Math.PI / 2 + k * TAU); ctx.stroke(); }
+  // 手指会挡住落点，数字放到圈的上方
+  ctx.textAlign = 'center'; ctx.fillStyle = full ? '#ffffff' : '#ffd24a'; ctx.font = NUM(22);
+  outlined(shots > 0 ? `预计 ${pvN}` : '充能中', aim.x, Math.max(INS.t + 60, aim.y - rr - 18), 5);
+  ctx.globalAlpha = 1;
+}
+function drawBlasts() {
+  const outer = new Path2D(), inner = new Path2D(), hot = new Path2D(), ice = new Path2D(), iceCore = new Path2D(), fade = new Path2D();
+  for (const b of blasts) {
+    if (b.t < 0) continue;
+    const r = b.r, late = b.t > b.T * .6;
+    const P = b.k === 9 ? ice : late ? fade : outer;
+    P.moveTo(b.x + r, b.y); P.arc(b.x, b.y, r, 0, TAU);
+    if (!late) {
+      const C = b.k === 9 ? iceCore : inner; C.moveTo(b.x + r * .5, b.y); C.arc(b.x, b.y, r * .5, 0, TAU);
+      if (b.k !== 9 && b.t < b.grow * .7) { hot.moveTo(b.x + r * .22, b.y); hot.arc(b.x, b.y, r * .22, 0, TAU); }
+    }
+  }
+  ctx.globalAlpha = .3; ctx.fillStyle = '#ff5a1f'; ctx.fill(fade);
+  ctx.globalAlpha = .85; ctx.fillStyle = '#e83a14'; ctx.fill(outer);
+  ctx.globalAlpha = .9; ctx.fillStyle = '#ffb020'; ctx.fill(inner);
+  ctx.globalAlpha = 1; ctx.fillStyle = '#fff3c0'; ctx.fill(hot);
+  ctx.globalAlpha = .8; ctx.fillStyle = '#8bebff'; ctx.fill(ice);
+  ctx.globalAlpha = 1; ctx.fillStyle = '#ffffff'; ctx.fill(iceCore);
+}
+// 小冰块站在底线下面，满充能时它身上的光圈就是“可以点了”的信号
+function drawCube() {
+  const x = VW / 2, y = LINE + 28, s = 13 * (1 - .06 * (3 - Math.min(hp, 3)));
+  const ready = shots > 0, k = aimK();
+  if (ready) {
+    const R = 22 + 8 * k + Math.sin(time * 8) * 1.5;
+    ctx.globalAlpha = .9; ctx.strokeStyle = k > .95 ? '#ffffff' : '#8bebff'; ctx.lineWidth = 3 + 2 * k; ctx.beginPath(); ctx.arc(x, y, R, 0, TAU); ctx.stroke(); ctx.globalAlpha = 1;
+  }
+  const face = (pts, c) => { ctx.fillStyle = c; ctx.beginPath(); pts.forEach(([a, b], i) => i ? ctx.lineTo(x + a * s, y + b * s) : ctx.moveTo(x + a * s, y + b * s)); ctx.closePath(); ctx.fill(); };
+  face([[-1, -.3], [0, .2], [0, 1], [-1, .5]], '#9be9fb');
+  face([[0, .2], [1, -.3], [1, .5], [0, 1]], '#3fb6da');
+  face([[-1, -.3], [0, -.8], [1, -.3], [0, .2]], '#eafbff');
+  ctx.fillStyle = '#0b2530'; ctx.beginPath(); ctx.arc(x - s * .66, y + s * .22, s * .12, 0, TAU); ctx.arc(x - s * .3, y + s * .4, s * .12, 0, TAU); ctx.fill();
+}
+function drawHUD() {
+  const cx = VW / 2, top = INS.t + 10;
+  ctx.textBaseline = 'alphabetic';
+  ctx.textAlign = 'left'; ctx.fillStyle = '#fff1e6'; ctx.font = TTL(24); outlined(`第 ${wave} 波`, INS.l + 12, top + 24, 5);
+  let dx = INS.l + 20;
+  for (let i = 0; i < Math.max(hp, 3); i++, dx += 18) {
+    ctx.beginPath(); ctx.moveTo(dx, top + 34); ctx.lineTo(dx + 7, top + 41); ctx.lineTo(dx, top + 48); ctx.lineTo(dx - 7, top + 41); ctx.closePath();
+    if (i < hp) { ctx.fillStyle = '#8bebff'; ctx.fill(); } else { ctx.strokeStyle = '#2e5f72'; ctx.lineWidth = 2; ctx.stroke(); }
+  }
+  ctx.textAlign = 'center'; ctx.fillStyle = '#ffd24a'; ctx.font = NUM(26); outlined(score.toLocaleString(), cx, top + 30, 5);
+  // 底部充能条
+  const bw = Math.min(300, VW - 40), by = VH - INS.b - 34, bx = cx - bw / 2, cw = bw / S.store;
+  for (let i = 0; i < S.store; i++) {
+    const k = i < shots ? 1 : i === shots ? clamp(charge, 0, 1) : 0;
+    ctx.fillStyle = '#0e1a20'; ctx.fillRect(bx + i * cw, by, cw - 4, 12);
+    ctx.fillStyle = k >= 1 ? '#8bebff' : '#2e6f86'; ctx.fillRect(bx + i * cw, by, (cw - 4) * k, 12);
+  }
+  const hk = aimK();
+  ctx.font = FONT(13); ctx.textAlign = 'center';
+  if (aim && shots > 0) { ctx.fillStyle = hk >= .98 ? '#ffffff' : '#8bebff'; outlined(hk >= .98 ? '满蓄力！破甲、连锁更远、回能' : `蓄力中 +${Math.round(hk * S.hold * 100)}%`, cx, by - 7, 4); }
+  else if (shots > 0) { ctx.fillStyle = '#8bebff'; outlined('按住瞄准，松手引爆', cx, by - 7, 4); }
+  else { ctx.fillStyle = '#8c6e62'; outlined('充能中', cx, by - 7, 4); }
+  if (state === 'play' && chain > 0) { ctx.fillStyle = '#fff1e6'; ctx.font = NUM(Math.min(40, 20 + Math.log2(chain + 1) * 3)); outlined(`连锁 ×${chain}`, cx, VH * .62, 6); }
+  if (banner) {
+    ctx.globalAlpha = Math.min(1, banner.t * 2);
+    ctx.fillStyle = banner.c || '#ffd24a'; ctx.font = TTL(30); outlined(banner.a, cx, top + 96, 6);
+    if (banner.k != null && sprites) { const tw = ctx.measureText(banner.a).width, sz = SPR * 1.1; ctx.drawImage(sprites[banner.k][Math.floor(time * 10) % 4], cx - tw / 2 - sz * .62, top + 86 - sz / 2, sz, sz); }
+    ctx.fillStyle = '#fff1e6'; ctx.font = FONT(14); outlined(banner.b, cx, top + 120, 4);
+    ctx.globalAlpha = 1;
+  }
+}
+
+// ───────── 输入与主循环 ─────────
+let aimPid = null;
+cv.addEventListener('pointerdown', e => {
+  e.preventDefault(); audioInit();
+  if (aim) return;
+  aimPid = e.pointerId; try { cv.setPointerCapture(e.pointerId); } catch (err) {}
+  aimStart(e.clientX, e.clientY);
+});
+cv.addEventListener('pointermove', e => { if (e.pointerId === aimPid) aimMove(e.clientX, e.clientY); });
+cv.addEventListener('pointerup', e => { if (e.pointerId === aimPid) { aimPid = null; aimEnd(); } });
+cv.addEventListener('pointercancel', e => { if (e.pointerId === aimPid) { aimPid = null; aim = null; } });
+$('b-again').onclick = () => { audioInit(); newGame(); };
+const refreshTools = () => { $('b-snd').classList.toggle('off', !save.snd); $('b-vib').classList.toggle('off', !save.vib); $('b-vib').style.display = canVibe ? '' : 'none'; };
+$('b-snd').onclick = () => { audioInit(); save.snd = !save.snd; if (master) master.gain.value = save.snd ? .5 : 0; persist(); refreshTools(); };
+$('b-vib').onclick = () => { save.vib = !save.vib; persist(); refreshTools(); buzz(30, true); };
+addEventListener('resize', resize);
+addEventListener('contextmenu', e => e.preventDefault());
+let last = performance.now(), qAvg = 16, qBad = 0;
+function frame(now) {
+  requestAnimationFrame(frame);
+  const ms = now - last, rdt = Math.min(.05, ms / 1000); last = now;
+  if (state === 'play' && ms < 150) {
+    qAvg += (ms - qAvg) * .1;
+    qBad = qAvg > 26 ? qBad + ms : Math.max(0, qBad - ms);
+    if (qBad > 2000 && QL < 2) { QL++; qBad = 0; qAvg = 17; resize(); }
+  }
+  update(rdt); render();
+}
+resize(); refreshTools(); newGame();
+requestAnimationFrame(frame);
+window.__nk = { get state() { return state; }, get wave() { return wave; }, get hp() { return hp; }, get motes() { return motes; }, get blasts() { return blasts; }, get shots() { return shots; }, get ql() { return QL; } };
+</script>
+</body>
+</html>
